@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ΚΗΜΔΗΣ - Αναζήτηση Μεταδεδομένων ανά ΑΔΑΜ</title>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --hover-color: #004494;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        input[type="text"] {
+            width: 60%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(0, 86, 179, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            flex: 1 1 calc(20% - 20px);
+            min-width: 140px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: var(--hover-color);
+        }
+
+        #results {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            min-height: 150px;
+            overflow-x: auto;
+        }
+
+        /* Στυλ για την εμφάνιση των JSON Μεταδεδομένων */
+        .json-tree {
+            list-style-type: none;
+            padding-left: 20px;
+            margin: 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .json-tree li {
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .json-key {
+            color: #d63384;
+            font-weight: bold;
+        }
+
+        .json-string { color: #198754; }
+        .json-number { color: #0d6efd; }
+        .json-boolean { color: #fd7e14; }
+        .json-null { color: #6c757d; font-style: italic; }
+
+        .loading {
+            text-align: center;
+            font-weight: bold;
+            color: #0dcaf0;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Αναζήτηση Μεταδεδομένων ΚΗΜΔΗΣ</h1>
+    
+    <div class="input-group">
+        <input type="text" id="adamInput" placeholder="Εισάγετε ΑΔΑΜ (π.χ. 23REQ000000000)">
+    </div>
+
+    <div class="button-group">
+        <button onclick="fetchMetadata('primary')">Πρωτογενές</button>
+        <button onclick="fetchMetadata('approved')">Εγκεκριμένο</button>
+        <button onclick="fetchMetadata('tender')">Πρόσκληση</button>
+        <button onclick="fetchMetadata('contract')">Σύμβαση</button>
+        <button onclick="fetchMetadata('payment')">Πληρωμή</button>
+    </div>
+
+    <div id="results">
+        <div style="text-align: center; color: #6c757d;">
+            Εισάγετε τον ΑΔΑΜ και επιλέξτε το αντίστοιχο στάδιο για να δείτε τα δεδομένα.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Base URL του OpenData API του ΚΗΜΔΗΣ
+    const API_BASE_URL = 'https://cerpp.eprocurement.gov.gr/khmdhs-opendata/api/v1';
+
+    // Αντιστοίχιση των σταδίων στα αντίστοιχα endpoints βάσει του Swagger
+    // Εάν τα endpoints αλλάξουν στις προδιαγραφές, η προσαρμογή γίνεται εδώ.
+    const endpoints = {
+        primary: '/primaryRequests',
+        approved: '/approvedRequests',
+        tender: '/callsForTender',
+        contract: '/contracts',
+        payment: '/payments'
+    };
+
+    async function fetchMetadata(stage) {
+        const adam = document.getElementById('adamInput').value.trim();
+        const resultsDiv = document.getElementById('results');
+
+        if (!adam) {
+            resultsDiv.innerHTML = '<p class="error">Παρακαλώ εισάγετε έναν έγκυρο ΑΔΑΜ.</p>';
+            return;
+        }
+
+        resultsDiv.innerHTML = '<p class="loading">Ανάκτηση δεδομένων από το ΚΗΜΔΗΣ...</p>';
+
+        try {
+            // Δημιουργία του URL. Συνήθως η παράμετρος αναζήτησης είναι '?adam='
+            const url = `${API_BASE_URL}${endpoints[stage]}?adam=${encodeURIComponent(adam)}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Σφάλμα δικτύου ή το έγγραφο δεν βρέθηκε (Κωδικός: ${response.status})`);
+            }
+
+            const data = await response.json();
+
+            // Αν το API επιστρέψει άδεια λίστα (περιπτώσεις όπου δεν βρέθηκε ο ΑΔΑΜ)
+            if (data.length === 0 || (data.content && data.content.length === 0)) {
+                resultsDiv.innerHTML = '<p class="error">Δεν βρέθηκαν αποτελέσματα για αυτόν τον ΑΔΑΜ στο συγκεκριμένο στάδιο.</p>';
+                return;
+            }
+
+            // Εμφάνιση του JSON σε μορφή δέντρου για εύκολη ανάγνωση
+            resultsDiv.innerHTML = `<ul class="json-tree">${buildJsonTree(data)}</ul>`;
+
+        } catch (error) {
+            console.error("Σφάλμα API:", error);
+            resultsDiv.innerHTML = `<p class="error">Υπήρξε σφάλμα κατά την επικοινωνία με το API.<br><small>${error.message}</small></p>`;
+        }
+    }
+
+    // Αναδρομική συνάρτηση για την οπτικοποίηση οποιουδήποτε βάθους μεταδεδομένων JSON
+    function buildJsonTree(obj) {
+        if (obj === null) return '<span class="json-null">null</span>';
+        
+        if (typeof obj !== 'object') {
+            if (typeof obj === 'string') return `<span class="json-string">"${obj}"</span>`;
+            if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+            if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+            return `<span>${obj}</span>`;
+        }
+
+        let html = '';
+        const isArray = Array.isArray(obj);
+
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const value = obj[key];
+                const displayKey = isArray ? `[${key}]` : key;
+                
+                html += `<li>`;
+                html += `<span class="json-key">${displayKey}:</span> `;
+                
+                if (typeof value === 'object' && value !== null) {
+                    // Αν είναι αντικείμενο, δημιουργούμε υπολίστα
+                    html += `<ul class="json-tree">${buildJsonTree(value)}</ul>`;
+                } else {
+                    html += buildJsonTree(value);
+                }
+                html += `</li>`;
+            }
+        }
+        return html;
+    }
+</script>
+
+</body>
+</html>
