@@ -114,7 +114,6 @@
 
         .loading { text-align: center; font-weight: bold; color: #0dcaf0; }
         .error { color: #dc3545; font-weight: bold; text-align: left; }
-        .debug-info { background: #ffe6e6; padding: 10px; border-left: 4px solid #dc3545; margin-top: 10px; font-family: monospace; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -123,7 +122,7 @@
     <h1>Αναζήτηση Μεταδεδομένων ΚΗΜΔΗΣ</h1>
     
     <div class="input-group">
-        <input type="text" id="adamInput" placeholder="Εισάγετε ΑΔΑΜ (π.χ. 23REQ000000000)">
+        <input type="text" id="adamInput" placeholder="Εισάγετε ΑΔΑΜ (π.χ. 26SYMV019210768)">
     </div>
 
     <div class="button-group">
@@ -142,10 +141,8 @@
 </div>
 
 <script>
-    // Base URL του OpenData API του ΚΗΜΔΗΣ
     const API_BASE_URL = 'https://cerpp.eprocurement.gov.gr/khmdhs-opendata/api/v1';
 
-    // Endpoints βάσει σταδίου
     const endpoints = {
         primary: '/primaryRequests',
         approved: '/approvedRequests',
@@ -155,7 +152,6 @@
     };
 
     async function fetchMetadata(stage) {
-        // Καθαρισμός του input από κενά (ώστε να μην χτυπήσει το API)
         const adam = document.getElementById('adamInput').value.trim();
         const resultsDiv = document.getElementById('results');
 
@@ -164,62 +160,49 @@
             return;
         }
 
-        resultsDiv.innerHTML = '<p class="loading">Ανάκτηση δεδομένων από το ΚΗΜΔΗΣ...</p>';
+        resultsDiv.innerHTML = '<p class="loading">Ανάκτηση δεδομένων μέσω ασφαλούς Proxy...</p>';
 
-        // Το νέο URL χρησιμοποιεί τον ΑΔΑΜ ως Path Variable (REST Standard)
-        const url = `${API_BASE_URL}${endpoints[stage]}/${encodeURIComponent(adam)}`;
+        // Αρχικό URL του ΚΗΜΔΗΣ με παράμετρο αναζήτησης ?adam= (η πιο ασφαλής μέθοδος για λίστες)
+        const targetUrl = `${API_BASE_URL}${endpoints[stage]}?adam=${encodeURIComponent(adam)}`;
+        
+        // Χρήση του allorigins Proxy για να παρακάμψουμε το CORS block
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
         try {
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
+            const response = await fetch(proxyUrl);
 
             if (!response.ok) {
-                // Διαχείριση γνωστών σφαλμάτων HTTP
                 if (response.status === 404) {
-                    throw new Error(`Δεν βρέθηκε εγγραφή με ΑΔΑΜ "${adam}" στο στάδιο που επιλέξατε (Σφάλμα 404). Βεβαιωθείτε ότι ο ΑΔΑΜ ανήκει σε αυτό το στάδιο.`);
+                    throw new Error(`Σφάλμα 404: Δεν βρέθηκε εγγραφή.`);
                 }
-                
-                const errorText = await response.text();
-                throw new Error(`Σφάλμα Server (Κωδικός: ${response.status}). <br>Μήνυμα: ${errorText}`);
+                throw new Error(`Σφάλμα Server (Κωδικός: ${response.status}).`);
             }
 
             const data = await response.json();
 
-            // Έλεγχος αν γύρισε άδειο αντικείμενο
-            if (!data || Object.keys(data).length === 0) {
-                resultsDiv.innerHTML = '<p class="error" style="text-align: center;">Η απάντηση ήταν άδεια. Δεν υπάρχουν δεδομένα.</p>';
-                return;
+            // Έλεγχος των δεδομένων: Το ΚΗΜΔΗΣ συχνά επιστρέφει λίστες ή "σελίδες" (content)
+            let finalData = data;
+            
+            if (data.content && Array.isArray(data.content)) {
+                if (data.content.length === 0) {
+                    throw new Error(`Δεν βρέθηκε εγγραφή με ΑΔΑΜ "${adam}" στο στάδιο που επιλέξατε.`);
+                }
+                finalData = data.content[0]; // Παίρνουμε το 1ο αποτέλεσμα της λίστας
+            } else if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    throw new Error(`Δεν βρέθηκε εγγραφή με ΑΔΑΜ "${adam}" στο στάδιο που επιλέξατε.`);
+                }
+                finalData = data[0];
+            } else if (Object.keys(data).length === 0) {
+                throw new Error("Το αποτέλεσμα επέστρεψε άδειο.");
             }
 
-            // Εμφάνιση των δεδομένων
-            resultsDiv.innerHTML = `<ul class="json-tree">${buildJsonTree(data)}</ul>`;
+            // Εμφάνιση των δεδομένων με το δέντρο
+            resultsDiv.innerHTML = `<ul class="json-tree">${buildJsonTree(finalData)}</ul>`;
 
         } catch (error) {
             console.error("Σφάλμα:", error);
-            
-            // Αν το σφάλμα είναι "Failed to fetch", κατά 99% είναι πρόβλημα CORS ή Firewall
-            if (error.message.includes('Failed to fetch')) {
-                resultsDiv.innerHTML = `
-                    <p class="error">Αποτυχία Σύνδεσης (Failed to fetch).</p>
-                    <div class="debug-info">
-                        <strong>Τι σημαίνει αυτό:</strong> Το πρόγραμμα περιήγησης μπλόκαρε το αίτημα προς το ΚΗΜΔΗΣ για λόγους ασφαλείας (CORS Policy) επειδή τρέχεις το αρχείο τοπικά.<br><br>
-                        <strong>Λύση:</strong> Για να λειτουργήσει τοπικά, χρειάζεται είτε να ανέβει σε έναν Web Server, είτε να χρησιμοποιήσεις ένα CORS-bypass extension στον browser σου για τις δοκιμές.
-                        <br><strong>URL που ζητήθηκε:</strong> ${url}
-                    </div>
-                `;
-            } else {
-                resultsDiv.innerHTML = `
-                    <p class="error">Υπήρξε σφάλμα:</p>
-                    <div class="debug-info">
-                        ${error.message}<br><br>
-                        <strong>URL που ζητήθηκε:</strong> ${url}
-                    </div>
-                `;
-            }
+            resultsDiv.innerHTML = `<p class="error">${error.message}</p>`;
         }
     }
 
