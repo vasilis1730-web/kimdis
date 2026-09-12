@@ -1,243 +1,110 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ΚΗΜΔΗΣ - Αναζήτηση Μεταδεδομένων ανά ΑΔΑΜ</title>
-    <style>
-        :root {
-            --primary-color: #0056b3;
-            --hover-color: #004494;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-color: #333333;
-            --border-radius: 8px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ΚΗΜΔΗΣ — Υπερ-Εργαλείο Αναζήτησης</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+<meta name="description" content="Αναζήτηση πλήρους αλυσίδας δημοσίων συμβάσεων στο ΚΗΜΔΗΣ από ΑΔΑΜ, ΑΔΑ Διαύγειας ή Α/Α ΕΣΗΔΗΣ, με οικονομική ανάλυση και εξαγωγή σε Excel, CSV, JSON και ZIP.">
+<meta name="author" content="developer V. Diakolios">
+<meta name="theme-color" content="#0b5ea8">
+<meta name="color-scheme" content="light dark">
 
-        .container {
-            background-color: var(--card-bg);
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-width: 900px;
-            width: 100%;
-        }
+<meta property="og:title" content="ΚΗΜΔΗΣ — Υπερ-Εργαλείο Αναζήτησης">
+<meta property="og:description" content="Πλήρης αλυσίδα δημόσιας σύμβασης από έναν μόνο κωδικό.">
+<meta property="og:type" content="website">
 
-        h1 {
-            text-align: center;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            margin-bottom: 20px;
-        }
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="stylesheet" href="assets/khmdis-ui.css">
 
-        .input-group {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 25px;
-        }
+<style>
+  /* Ελάχιστα στυλ για τη σελίδα-υποδοχέα — όλα τα υπόλοιπα ζουν στο khmdis-ui.css */
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body { background: #eef2f7; }
+  @media (prefers-color-scheme: dark) { body { background: #0f1720; } }
 
-        input[type="text"] {
-            width: 60%;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: var(--border-radius);
-            outline: none;
-            text-transform: uppercase;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 5px rgba(0, 86, 179, 0.3);
-        }
-
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 14px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            flex: 1 1 calc(20% - 20px);
-            min-width: 140px;
-            font-weight: 600;
-        }
-
-        button:hover {
-            background-color: var(--hover-color);
-        }
-
-        #results {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: var(--border-radius);
-            padding: 20px;
-            min-height: 150px;
-            overflow-x: auto;
-        }
-
-        .json-tree {
-            list-style-type: none;
-            padding-left: 20px;
-            margin: 0;
-            font-family: monospace;
-            font-size: 14px;
-        }
-        
-        .json-tree li { margin-bottom: 5px; line-height: 1.5; }
-        .json-key { color: #d63384; font-weight: bold; }
-        .json-string { color: #198754; }
-        .json-number { color: #0d6efd; }
-        .json-boolean { color: #fd7e14; }
-        .json-null { color: #6c757d; font-style: italic; }
-
-        .loading { text-align: center; font-weight: bold; color: #0dcaf0; }
-        .error { color: #dc3545; font-weight: bold; text-align: left; }
-    </style>
+  #boot {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 14px; font-family: "Segoe UI", system-ui, sans-serif; color: #5b6b7d;
+    text-align: center; padding: 24px;
+  }
+  #boot .ring {
+    width: 34px; height: 34px; border: 3px solid #c3d0de; border-top-color: #0b5ea8;
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #boot .fail { color: #b42318; font-weight: 700; max-width: 520px; line-height: 1.6; }
+  #boot code { background: rgba(127,127,127,.15); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { #boot .ring { animation: none; } }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Αναζήτηση Μεταδεδομένων ΚΗΜΔΗΣ</h1>
-    
-    <div class="input-group">
-        <input type="text" id="adamInput" placeholder="Εισάγετε ΑΔΑΜ (π.χ. 26SYMV019210768)">
-    </div>
+<noscript>
+  <div style="padding:28px;font-family:system-ui,sans-serif;text-align:center">
+    <h1>Χρειάζεται JavaScript</h1>
+    <p>Η εφαρμογή ανακτά δεδομένα από το ΚΗΜΔΗΣ ζωντανά και δεν μπορεί να λειτουργήσει χωρίς JavaScript.</p>
+  </div>
+</noscript>
 
-    <div class="button-group">
-        <button onclick="fetchMetadata('primary')">Πρωτογενές</button>
-        <button onclick="fetchMetadata('approved')">Εγκεκριμένο</button>
-        <button onclick="fetchMetadata('tender')">Πρόσκληση</button>
-        <button onclick="fetchMetadata('contract')">Σύμβαση</button>
-        <button onclick="fetchMetadata('payment')">Πληρωμή</button>
-    </div>
-
-    <div id="results">
-        <div style="text-align: center; color: #6c757d;">
-            Εισάγετε τον ΑΔΑΜ και επιλέξτε το αντίστοιχο στάδιο για να δείτε τα δεδομένα.
-        </div>
-    </div>
+<div id="app">
+  <div id="boot">
+    <div class="ring"></div>
+    <div>Φόρτωση εφαρμογής…</div>
+  </div>
 </div>
 
+<script src="assets/vendor/jszip.min.js"></script>
+<script src="assets/khmdis-core.js"></script>
+<script src="assets/khmdis-ui.js"></script>
 <script>
-    const API_BASE_URL = 'https://cerpp.eprocurement.gov.gr/khmdhs-opendata/api/v1';
+(function () {
+  'use strict';
 
-    const endpoints = {
-        primary: '/primaryRequests',
-        approved: '/approvedRequests',
-        tender: '/callsForTender',
-        contract: '/contracts',
-        payment: '/payments'
-    };
+  var boot = document.getElementById('boot');
 
-    async function fetchMetadata(stage) {
-        const adam = document.getElementById('adamInput').value.trim();
-        const resultsDiv = document.getElementById('results');
+  function fail(message) {
+    boot.innerHTML = '<div class="fail">⚠️ ' + message + '</div>';
+  }
 
-        if (!adam) {
-            resultsDiv.innerHTML = '<p class="error" style="text-align: center;">Παρακαλώ εισάγετε έναν έγκυρο ΑΔΑΜ.</p>';
-            return;
-        }
+  if (!window.KHMDIS || !window.KHMDIS_UI) {
+    fail('Δεν φορτώθηκαν τα αρχεία της εφαρμογής.<br><br>' +
+         'Αν τρέχεις τη σελίδα τοπικά με διπλό κλικ, ο browser μπλοκάρει τη φόρτωση. ' +
+         'Χρησιμοποίησε έναν τοπικό server, π.χ. <code>python3 -m http.server</code>, ' +
+         'και άνοιξε <code>http://localhost:8000</code>.');
+    return;
+  }
 
-        resultsDiv.innerHTML = '<p class="loading">Ανάκτηση δεδομένων μέσω ασφαλούς Proxy...</p>';
+  try {
+    boot.remove();
+    window.KHMDIS_UI.mount({ container: document.getElementById('app'), overlay: false });
+  } catch (e) {
+    fail('Σφάλμα εκκίνησης: ' + (e && e.message ? e.message : e));
+    return;
+  }
 
-        // Αρχικό URL του ΚΗΜΔΗΣ με παράμετρο αναζήτησης ?adam= (η πιο ασφαλής μέθοδος για λίστες)
-        const targetUrl = `${API_BASE_URL}${endpoints[stage]}?adam=${encodeURIComponent(adam)}`;
-        
-        // Χρήση του allorigins Proxy για να παρακάμψουμε το CORS block
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-
-        try {
-            const response = await fetch(proxyUrl);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error(`Σφάλμα 404: Δεν βρέθηκε εγγραφή.`);
-                }
-                throw new Error(`Σφάλμα Server (Κωδικός: ${response.status}).`);
+  /* --- Service worker: λειτουργία εκτός σύνδεσης για το κέλυφος ---------- */
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        // Όταν έρθει νέα έκδοση, ενημερώνουμε διακριτικά αντί να σπάσουμε τη σελίδα
+        reg.addEventListener('updatefound', function () {
+          var sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener('statechange', function () {
+            if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              console.info('[ΚΗΜΔΗΣ] Διαθέσιμη νέα έκδοση — ανανέωσε τη σελίδα.');
             }
-
-            const data = await response.json();
-
-            // Έλεγχος των δεδομένων: Το ΚΗΜΔΗΣ συχνά επιστρέφει λίστες ή "σελίδες" (content)
-            let finalData = data;
-            
-            if (data.content && Array.isArray(data.content)) {
-                if (data.content.length === 0) {
-                    throw new Error(`Δεν βρέθηκε εγγραφή με ΑΔΑΜ "${adam}" στο στάδιο που επιλέξατε.`);
-                }
-                finalData = data.content[0]; // Παίρνουμε το 1ο αποτέλεσμα της λίστας
-            } else if (Array.isArray(data)) {
-                if (data.length === 0) {
-                    throw new Error(`Δεν βρέθηκε εγγραφή με ΑΔΑΜ "${adam}" στο στάδιο που επιλέξατε.`);
-                }
-                finalData = data[0];
-            } else if (Object.keys(data).length === 0) {
-                throw new Error("Το αποτέλεσμα επέστρεψε άδειο.");
-            }
-
-            // Εμφάνιση των δεδομένων με το δέντρο
-            resultsDiv.innerHTML = `<ul class="json-tree">${buildJsonTree(finalData)}</ul>`;
-
-        } catch (error) {
-            console.error("Σφάλμα:", error);
-            resultsDiv.innerHTML = `<p class="error">${error.message}</p>`;
-        }
-    }
-
-    // Συνάρτηση μετατροπής JSON σε καθαρή HTML δομή
-    function buildJsonTree(obj) {
-        if (obj === null) return '<span class="json-null">null</span>';
-        
-        if (typeof obj !== 'object') {
-            if (typeof obj === 'string') return `<span class="json-string">"${obj}"</span>`;
-            if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
-            if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
-            return `<span>${obj}</span>`;
-        }
-
-        let html = '';
-        const isArray = Array.isArray(obj);
-
-        for (let key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                const value = obj[key];
-                const displayKey = isArray ? `[${key}]` : key;
-                
-                html += `<li>`;
-                html += `<span class="json-key">${displayKey}:</span> `;
-                
-                if (typeof value === 'object' && value !== null) {
-                    html += `<ul class="json-tree">${buildJsonTree(value)}</ul>`;
-                } else {
-                    html += buildJsonTree(value);
-                }
-                html += `</li>`;
-            }
-        }
-        return html;
-    }
+          });
+        });
+      }).catch(function (e) {
+        console.warn('[ΚΗΜΔΗΣ] Ο service worker δεν καταχωρήθηκε:', e && e.message);
+      });
+    });
+  }
+})();
 </script>
 
 </body>

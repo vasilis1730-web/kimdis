@@ -1,0 +1,19 @@
+# Ρύθμιση του Cloudflare Worker που γεφυρώνει το CORS.
+#
+#   npm install -g wrangler
+#   wrangler login
+#   wrangler deploy
+#
+name = "kimdis-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Προαιρετικό αλλά ΣΥΝΙΣΤΑΤΑΙ όταν δημοσιεύσεις τη σελίδα:
+# περιόρισε ποιος επιτρέπεται να καλεί τον Worker σου.
+# Κενό ή απόν = ανοιχτό σε όλους (*).
+#
+# [vars]
+# ALLOWED_ORIGINS = "https://vasilis1730-web.github.io"
+
+[observability]
+enabled = true
