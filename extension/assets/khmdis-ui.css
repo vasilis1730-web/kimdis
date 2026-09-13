@@ -1,0 +1,362 @@
+/*!
+ * ΚΗΜΔΗΣ Υπερ-Εργαλείο — κοινό φύλλο στυλ
+ * Χρησιμοποιείται αυτούσιο από την online σελίδα και από την επέκταση Chrome.
+ * Όλοι οι κανόνες είναι φωλιασμένοι κάτω από #__khmdis_app__ ώστε, όταν η
+ * επέκταση «κάθεται» πάνω σε ξένη σελίδα, να μην την επηρεάζει και να μην
+ * επηρεάζεται από αυτήν.
+ */
+
+#__khmdis_app__ {
+  /* ---- Ανοιχτό θέμα (προεπιλογή) ---- */
+  --bg: #eef2f7;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --border: #dde5ee;
+  --border-strong: #c3d0de;
+  --text: #16212e;
+  --text-dim: #5b6b7d;
+  --text-faint: #8494a5;
+  --brand: #0b5ea8;
+  --brand-dark: #084b86;
+  --brand-soft: #e8f1f9;
+  --green: #146c43;
+  --amber: #b45309;
+  --red: #b42318;
+  --red-soft: #fdeceb;
+  --amber-soft: #fef6e7;
+  --shadow: 0 4px 16px rgba(15, 35, 60, .07);
+  --shadow-lg: 0 12px 34px rgba(15, 35, 60, .13);
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  color-scheme: light;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#__khmdis_app__[data-theme="dark"] {
+  --bg: #0f1720;
+  --surface: #17212c;
+  --surface-2: #1c2734;
+  --surface-3: #223040;
+  --border: #2b3a4c;
+  --border-strong: #3b4d63;
+  --text: #e6edf5;
+  --text-dim: #9fb0c3;
+  --text-faint: #75889d;
+  --brand: #4aa3e8;
+  --brand-dark: #6cb6ef;
+  --brand-soft: #17324a;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --red-soft: #3b1f1f;
+  --amber-soft: #3a2f14;
+  --shadow: 0 4px 16px rgba(0, 0, 0, .35);
+  --shadow-lg: 0 12px 34px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+
+#__khmdis_app__ *,
+#__khmdis_app__ *::before,
+#__khmdis_app__ *::after { box-sizing: border-box; }
+
+/* Το [hidden] πρέπει να νικά τα δικά μας display:flex/inline-flex, αλλιώς
+   κρυμμένα κουμπιά (π.χ. «Ακύρωση») παραμένουν ορατά. */
+#__khmdis_app__ [hidden] { display: none !important; }
+
+/* Λειτουργία επικάλυψης: όταν η επέκταση ανοίγει πάνω από ξένη σελίδα */
+#__khmdis_app__.km-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.km-wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; }
+
+/* ====================== ΚΕΦΑΛΙΔΑ ====================== */
+
+.km-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.km-top { padding: 20px; margin-bottom: 18px; }
+
+.km-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.km-title { font-weight: 800; font-size: 21px; color: var(--brand); letter-spacing: -.2px; }
+.km-sub { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+.km-dev {
+  font-size: 11.5px; color: var(--text-faint); margin-top: 8px; line-height: 1.45;
+  border-left: 3px solid var(--brand); padding-left: 9px;
+}
+.km-headbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ====================== ΚΟΥΜΠΙΑ ====================== */
+
+.km-btn {
+  border: 1px solid transparent; background: var(--brand); color: #fff;
+  font-weight: 700; font-size: 14px; font-family: inherit;
+  border-radius: var(--radius-sm); padding: 11px 18px; cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .06s;
+  white-space: nowrap; display: inline-flex; align-items: center; gap: 7px;
+}
+.km-btn:hover:not(:disabled) { background: var(--brand-dark); box-shadow: 0 4px 12px rgba(11, 94, 168, .25); }
+.km-btn:active:not(:disabled) { transform: translateY(1px); }
+.km-btn:disabled { opacity: .5; cursor: not-allowed; }
+.km-btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+.km-btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.km-btn-ghost:hover:not(:disabled) { background: var(--surface-3); box-shadow: none; }
+.km-btn-green { background: var(--green); }
+.km-btn-green:hover:not(:disabled) { background: var(--green); filter: brightness(1.1); }
+.km-btn-danger { background: var(--red); }
+.km-btn-sm { padding: 7px 12px; font-size: 12.5px; }
+
+.km-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 12px; }
+.km-tool {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 8px; font-size: 12.5px; font-weight: 700; font-family: inherit;
+  color: #fff; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  transition: filter .15s; text-align: center;
+}
+.km-tool:hover { filter: brightness(1.12); }
+.km-tool-cpv { background: #d97706; }
+.km-tool-diavgeia { background: #0284c7; }
+.km-tool-search { background: #0f766e; }
+.km-tool-law { background: #6d28d9; }
+
+/* ====================== ΚΑΡΤΕΛΕΣ ====================== */
+
+.km-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; }
+.km-tab {
+  border: 0; background: transparent; color: var(--text-dim);
+  font-weight: 700; font-size: 14px; font-family: inherit;
+  padding: 11px 16px; cursor: pointer; border-radius: 9px 9px 0 0;
+  border-bottom: 3px solid transparent; margin-bottom: -2px; transition: .15s;
+}
+.km-tab:hover { color: var(--text); background: var(--surface-3); }
+.km-tab[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
+
+/* ====================== ΠΕΔΙΑ ====================== */
+
+.km-field { display: flex; flex-direction: column; gap: 5px; }
+.km-label { font-size: 12.5px; font-weight: 700; color: var(--text-dim); }
+.km-hint { font-size: 11.5px; color: var(--text-faint); }
+
+.km-input, .km-textarea, .km-select {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  padding: 12px 13px; font-size: 15px; font-family: inherit;
+  background: var(--surface); color: var(--text); width: 100%;
+}
+.km-input:focus, .km-textarea:focus, .km-select:focus {
+  outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.km-input-adam { text-transform: uppercase; font-family: Consolas, "SF Mono", monospace; letter-spacing: .5px; }
+.km-textarea { min-height: 130px; resize: vertical; font-family: Consolas, monospace; font-size: 13px; text-transform: uppercase; }
+.km-searchbox { display: flex; gap: 9px; }
+.km-searchbox .km-input { flex: 1; }
+.km-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.km-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* ====================== ΚΑΤΑΣΤΑΣΗ ====================== */
+
+.km-status {
+  margin-top: 16px; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; font-size: 13.5px; color: var(--text-dim); font-weight: 600;
+}
+.km-progress { height: 5px; background: var(--surface-3); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+.km-progress-bar { height: 100%; width: 0; background: var(--brand); border-radius: 99px; transition: width .3s ease; }
+
+.km-err { color: var(--red); font-weight: 700; }
+.km-alert {
+  border-radius: var(--radius-sm); padding: 13px 15px; margin-top: 14px;
+  font-size: 13.5px; line-height: 1.55; border: 1px solid;
+}
+.km-alert-error { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+.km-alert-warn { background: var(--amber-soft); border-color: var(--amber); color: var(--amber); }
+.km-alert-info { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+.km-alert strong { display: block; margin-bottom: 4px; font-size: 14px; }
+.km-alert code { font-family: Consolas, monospace; font-size: 12.5px; background: rgba(127,127,127,.15); padding: 1px 5px; border-radius: 4px; }
+
+.km-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+.km-chip {
+  background: var(--brand-soft); color: var(--brand); border: 1px solid var(--border-strong);
+  border-radius: 99px; padding: 5px 12px; font-size: 12.5px; font-weight: 700;
+}
+.km-chip-stage { color: #fff; border-color: transparent; }
+
+/* ====================== ΟΙΚΟΝΟΜΙΚΑ ====================== */
+
+.km-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.km-stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow); }
+.km-stat-k { font-size: 12px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.km-stat-v { font-size: 23px; font-weight: 800; margin-top: 6px; color: var(--text); letter-spacing: -.5px; }
+.km-stat-sub { font-size: 12px; color: var(--text-faint); margin-top: 3px; }
+.km-stat-good .km-stat-v { color: var(--green); }
+.km-stat-warn .km-stat-v { color: var(--amber); }
+.km-stat-bad .km-stat-v { color: var(--red); }
+
+.km-meter { height: 7px; background: var(--surface-3); border-radius: 99px; overflow: hidden; margin-top: 9px; }
+.km-meter-bar { height: 100%; border-radius: 99px; background: var(--green); transition: width .4s ease; }
+.km-meter-bar.over { background: var(--red); }
+
+/* ====================== ΧΡΟΝΟΔΙΑΓΡΑΜΜΑ ====================== */
+
+.km-timeline { display: flex; gap: 0; margin: 6px 0 20px; overflow-x: auto; padding: 4px; }
+.km-tl-step { flex: 1; min-width: 122px; text-align: center; position: relative; padding: 0 6px; }
+.km-tl-step::after {
+  content: ""; position: absolute; top: 18px; left: 50%; width: 100%; height: 3px;
+  background: var(--border); z-index: 0;
+}
+.km-tl-step:last-child::after { display: none; }
+.km-tl-step.done::after { background: var(--green); }
+.km-tl-dot {
+  width: 38px; height: 38px; border-radius: 50%; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  background: var(--surface-3); border: 3px solid var(--border);
+  position: relative; z-index: 1; color: var(--text-faint);
+}
+.km-tl-step.done .km-tl-dot { background: var(--surface); border-color: var(--green); }
+.km-tl-name { font-size: 12px; font-weight: 700; color: var(--text-dim); }
+.km-tl-step.done .km-tl-name { color: var(--text); }
+.km-tl-count { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+.km-tl-amount { font-size: 11.5px; color: var(--brand); font-weight: 700; margin-top: 2px; }
+
+/* ====================== ΚΑΡΤΕΣ ΑΠΟΤΕΛΕΣΜΑΤΩΝ ====================== */
+
+.km-list { display: grid; gap: 15px; }
+.km-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.km-card-head {
+  padding: 15px 18px; display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; background: var(--surface-2); border-bottom: 1px solid var(--border);
+  border-left: 5px solid var(--brand);
+}
+.km-card-stage { font-weight: 800; font-size: 15.5px; display: flex; align-items: center; gap: 8px; }
+.km-card-adam { font-family: Consolas, monospace; font-weight: 700; font-size: 13.5px; color: var(--text-dim); margin-top: 3px; }
+.km-card-body { padding: 17px 18px; }
+.km-card-title { font-size: 15px; font-weight: 700; margin-bottom: 13px; line-height: 1.45; }
+
+.km-meta { display: grid; grid-template-columns: 215px 1fr; gap: 8px 16px; font-size: 13.5px; align-items: start; }
+.km-meta .k { color: var(--text-dim); }
+.km-meta .v { font-weight: 700; word-break: break-word; }
+.km-meta .v.mono { font-family: Consolas, monospace; font-weight: 600; }
+
+.km-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.km-link {
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+  border-radius: var(--radius-sm); padding: 9px 13px; font-size: 12.5px; font-weight: 700;
+  border: 1px solid var(--border-strong); color: var(--brand); background: var(--surface);
+  cursor: pointer; font-family: inherit; transition: .15s;
+}
+.km-link:hover { background: var(--brand-soft); border-color: var(--brand); }
+
+.km-details { margin-top: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.km-details > summary {
+  cursor: pointer; color: var(--brand); font-weight: 700; font-size: 13px;
+  padding: 11px 14px; outline: none; user-select: none; list-style: none;
+}
+.km-details > summary::-webkit-details-marker { display: none; }
+.km-details > summary::before { content: "▸ "; display: inline-block; transition: transform .15s; }
+.km-details[open] > summary::before { content: "▾ "; }
+.km-details > summary:focus-visible { outline: 2px solid var(--brand); border-radius: var(--radius-sm); }
+
+.km-kv { display: grid; grid-template-columns: minmax(200px, 34%) 1fr; border-top: 1px solid var(--border); font-size: 12.5px; }
+.km-kv > div { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.km-kv .pk { background: var(--surface-3); color: var(--text-dim); font-family: Consolas, monospace; font-weight: 600; word-break: break-all; }
+.km-kv .pv { background: var(--surface); word-break: break-word; }
+
+.km-empty { text-align: center; color: var(--text-faint); padding: 40px 20px; font-size: 14px; }
+
+/* ====================== ΠΙΝΑΚΑΣ (μαζική αναζήτηση) ====================== */
+
+.km-tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.km-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.km-table th, .km-table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.km-table th { background: var(--surface-3); font-weight: 700; color: var(--text-dim); position: sticky; top: 0; z-index: 1; }
+.km-table tbody tr:hover { background: var(--surface-2); }
+.km-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.km-table td.wrap { white-space: normal; min-width: 260px; }
+.km-table .ok { color: var(--green); font-weight: 700; }
+.km-table .bad { color: var(--red); font-weight: 700; }
+
+/* ====================== ΡΥΘΜΙΣΕΙΣ / ΔΙΑΓΝΩΣΤΙΚΑ ====================== */
+
+.km-drawer { margin-bottom: 18px; padding: 18px; }
+.km-drawer h3 { margin: 0 0 14px; font-size: 16px; color: var(--brand); }
+.km-drawer h4 { margin: 18px 0 9px; font-size: 13.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .4px; }
+.km-settings-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 13px; }
+.km-check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.km-check input { width: 17px; height: 17px; accent-color: var(--brand); cursor: pointer; }
+
+.km-diag { display: grid; gap: 8px; margin-top: 12px; }
+.km-diag-item { display: grid; grid-template-columns: 26px 220px 1fr; gap: 10px; align-items: start; font-size: 13px; padding: 9px 11px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.km-diag-name { font-weight: 700; }
+.km-diag-detail { color: var(--text-dim); word-break: break-word; font-family: Consolas, monospace; font-size: 12px; }
+
+.km-spin { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: km-spin .7s linear infinite; vertical-align: -2px; }
+@keyframes km-spin { to { transform: rotate(360deg); } }
+
+.km-foot { margin-top: 26px; text-align: center; font-size: 12px; color: var(--text-faint); line-height: 1.7; }
+.km-foot a { color: var(--brand); }
+
+.km-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ====================== ΜΙΚΡΕΣ ΟΘΟΝΕΣ ====================== */
+
+@media (max-width: 900px) {
+  .km-tools { grid-template-columns: 1fr 1fr; }
+  .km-meta { grid-template-columns: 1fr; gap: 2px 0; }
+  .km-meta .k { margin-top: 9px; font-size: 12px; }
+  .km-kv { grid-template-columns: 1fr; }
+  .km-kv .pk { border-bottom: 0; }
+  .km-grid2, .km-grid3 { grid-template-columns: 1fr; }
+  .km-diag-item { grid-template-columns: 24px 1fr; }
+  .km-diag-detail { grid-column: 2; }
+}
+@media (max-width: 560px) {
+  .km-wrap { padding: 14px 12px 50px; }
+  .km-searchbox { flex-direction: column; }
+  .km-title { font-size: 18px; }
+  .km-stat-v { font-size: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #__khmdis_app__ *, #__khmdis_app__ *::before, #__khmdis_app__ *::after {
+    animation-duration: .01ms !important; transition-duration: .01ms !important;
+  }
+}
+
+/* ====================== ΕΚΤΥΠΩΣΗ ====================== */
+
+@media print {
+  body > *:not(#__khmdis_app__) { display: none !important; }
+  #__khmdis_app__ {
+    position: static !important; background: #fff !important; color: #000 !important;
+    --surface: #fff; --surface-2: #fff; --surface-3: #fff;
+    --border: #999; --text: #000; --text-dim: #333; --text-faint: #555;
+  }
+  #__khmdis_app__ .km-wrap { max-width: none; padding: 0; }
+  .km-tools, .km-tabs, .km-searchbox, .km-headbtns, .km-actions,
+  .km-drawer, .km-status, .km-progress, .km-exportbar, .km-tabpanel[hidden] { display: none !important; }
+  .km-card, .km-stat, .km-panel { box-shadow: none !important; border: 1px solid #999 !important; break-inside: avoid; page-break-inside: avoid; }
+  .km-details { border: 1px solid #999 !important; }
+  .km-details > summary { display: none; }
+  .km-card-head { border-left-width: 3px !important; }
+  a[href]::after { content: " (" attr(href) ")"; font-size: 9px; color: #555; word-break: break-all; }
+  .km-link::after { content: none !important; }
+}
