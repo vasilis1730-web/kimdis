@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ΚΗΜΔΗΣ Υπερ-Εργαλείο",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "Πλήρης αλυσίδα δημοσίων συμβάσεων από ΑΔΑΜ, ΑΔΑ ή Α/Α ΕΣΗΔΗΣ — με οικονομική ανάλυση και εξαγωγή σε Excel, CSV, JSON και ZIP.",
   "author": "developer V. Diakolios",
   "icons": {
