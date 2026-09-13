@@ -52,13 +52,18 @@ globalThis.fetch = async (u, init) => {
     headers: { 'Content-Type': 'application/json', 'Set-Cookie': 'secret=1' }
   });
 };
-r = await call('https://p.dev/?url=' + encodeURIComponent('https://cerpp.eprocurement.gov.gr/khmdhs-opendata/contract?page=0'),
-  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"referenceNumber":"26SYMV019210768"}' });
+r = await worker.fetch(new Request('https://p.dev/?url=' + encodeURIComponent('https://cerpp.eprocurement.gov.gr/khmdhs-opendata/contract?page=0'),
+  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"referenceNumber":"26SYMV019210768"}' }),
+  { USER_AGENT: 'Mozilla/5.0 (δοκιμή)' }, ctx);
 check('POST προωθείται → 200', r.status === 200, 'πήρα ' + r.status);
 check('διατηρεί μέθοδο POST', seen && seen.method === 'POST');
 check('προωθεί το σώμα αυτούσιο', seen && seen.body === '{"referenceNumber":"26SYMV019210768"}');
 check('σωστό upstream URL', seen && seen.url.includes('khmdhs-opendata/contract?page=0'));
 check('ΔΕΝ προωθεί cookies προς τα πίσω', r.headers.get('Set-Cookie') === null);
+check('στέλνει κεφαλίδες browser (αλλιώς το ΚΗΜΔΗΣ κόβει με Error 1010)',
+  seen && /Mozilla\/5\.0/.test(seen.headers['User-Agent']), seen && seen.headers['User-Agent']);
+check('δεν προωθεί cookies ΠΡΟΣ το ΚΗΜΔΗΣ',
+  seen && !Object.keys(seen.headers).some(k => /cookie|authorization/i.test(k)));
 check('προσθέτει CORS στην απάντηση', r.headers.get('Access-Control-Allow-Origin') === '*');
 check('το σώμα φτάνει ακέραιο', (await r.json()).content[0].referenceNumber === '26SYMV019210768');
 

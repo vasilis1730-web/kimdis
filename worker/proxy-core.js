@@ -23,6 +23,20 @@ const MAX_BODY_BYTES = 256 * 1024;
 const CACHE_SECONDS = 300;
 
 /**
+ * Το cerpp.eprocurement.gov.gr είναι πίσω από Cloudflare και απορρίπτει με
+ * «Error 1010 — browser signature» ό,τι δεν μοιάζει με κανονικό browser.
+ *
+ * Ο proxy στέκεται στη θέση του browser του χρήστη: κάνει ΤΟ ΙΔΙΟ αίτημα που
+ * θα έκανε η επέκταση απευθείας από τον Chrome του. Οπότε στέλνει και τις ίδιες
+ * κεφαλίδες. Δεν είναι σάρωση — μια πλήρης αναζήτηση αλυσίδας κάνει ~8 αιτήματα.
+ *
+ * Αλλάζει με τη μεταβλητή περιβάλλοντος USER_AGENT.
+ */
+const DEFAULT_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+/**
  * Ποια origins επιτρέπονται. Ορίζεται με τη μεταβλητή ALLOWED_ORIGINS
  * (λίστα με κόμματα). Κενό = όλα (*).
  */
@@ -134,7 +148,9 @@ export async function handleProxy(request, env, ctx) {
         // Καμία cookie, κανένα Authorization — στέλνουμε μόνο τα απαραίτητα.
         'Accept': request.headers.get('Accept') || 'application/json, */*',
         'Accept-Language': 'el-GR,el;q=0.9,en;q=0.8',
-        'User-Agent': 'kimdis-proxy/' + VERSION + ' (+https://github.com/vasilis1730-web/kimdis)'
+        'User-Agent': (env && env.USER_AGENT) || DEFAULT_USER_AGENT,
+        'Referer': 'https://cerpp.eprocurement.gov.gr/',
+        'Origin': 'https://cerpp.eprocurement.gov.gr'
       }, request.method === 'POST'
         ? { 'Content-Type': request.headers.get('Content-Type') || 'application/json' }
         : {}),
