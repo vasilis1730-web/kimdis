@@ -1,0 +1,202 @@
+{
+  "content": [
+    {
+      "title": "Παροχή Υπηρεσιών Συντήρησης και Αναγόμωσης Πυροσβεστήρων Σχολικών Κτιρίων",
+      "referenceNumber": "26SYMV019210768",
+      "prevReferenceNo": null,
+      "noticeReferenceNumber": null,
+      "submissionDate": "2026-06-11T13:01:21.924",
+      "lastUpdateDate": null,
+      "contractSignedDate": "2026-06-11",
+      "startDate": "2026-06-11",
+      "noEndDate": false,
+      "endDate": "2026-12-31",
+      "cancelled": false,
+      "cancellationDate": null,
+      "cancellationType": null,
+      "cancellationReason": null,
+      "cancellationADA": null,
+      "decisionRelatedAda": null,
+      "contractNumber": "11598",
+      "authorEmail": null,
+      "organizationVatNumber": "999000111",
+      "greekOrganizationVatNumber": null,
+      "commitmentNo": null,
+      "diavgeiaADA": null,
+      "aaht": "1007.E00000.0001",
+      "budget": null,
+      "contractBudget": 5285.2,
+      "bidsSubmitted": null,
+      "maxBidsSubmitted": 1,
+      "numberOfSections": 1,
+      "assignedContract": {
+        "key": "2",
+        "value": "Όχι"
+      },
+      "socialContract": {
+        "key": "2",
+        "value": "Όχι"
+      },
+      "centralGovernmentAuthority": {
+        "key": "2",
+        "value": "Όχι"
+      },
+      "nutsCodes": [
+        {
+          "nutsCode": {
+            "key": "EL422",
+            "value": "Άνδρος, Θήρα, Κέα, Μήλος"
+          }
+        }
+      ],
+      "approvedRequestsList": [],
+      "organization": {
+        "key": "6239",
+        "value": "ΔΗΜΟΣ ΔΟΚΙΜΗΣ"
+      },
+      "procedureType": {
+        "key": "6",
+        "value": "Απευθείας ανάθεση"
+      },
+      "awardProcedure": null,
+      "nutsCode": {
+        "key": "EL422",
+        "value": "Άνδρος, Θήρα, Κέα, Μήλος"
+      },
+      "nutsCity": "ΔΟΚΙΜΗ",
+      "nutsPostalCode": "84400",
+      "nutsCountry": {
+        "key": "GR",
+        "value": "Ελλάδα"
+      },
+      "centralizedMarkets": [
+        {
+          "centralizedMarket": {
+            "key": "8",
+            "value": "Δεν χρησιμοποιείται"
+          }
+        }
+      ],
+      "legalContext": {
+        "key": "5",
+        "value": "ν.4412/2016 - Βιβλίο Ι – κάτω των ορίων"
+      },
+      "contractType": {
+        "key": "9",
+        "value": "Υπηρεσίες"
+      },
+      "assignCriteria": {
+        "key": "9",
+        "value": "Βάσει τιμής"
+      },
+      "classificationOfPublicLawOrganization": {
+        "key": "2",
+        "value": "ΟΤΑ"
+      },
+      "typeOfContractingAuthority": {
+        "key": "9",
+        "value": "ΝΠΔΔ"
+      },
+      "contractingAuthorityActivity": {
+        "key": "1",
+        "value": "Γενικές δημόσιες υπηρεσίες"
+      },
+      "contractDuration": 6,
+      "contractDurationUnitOfMeasure": {
+        "key": "3",
+        "value": "Μήνες"
+      },
+      "contractRelatedADA": {
+        "number1": null,
+        "number2": null,
+        "number3": "ΨΨ4Ξ46ΜΤΛ6-Ξ7Θ"
+      },
+      "fundingDetails": {
+        "publicFundingRef": null,
+        "publicFundingRefNum": null,
+        "publicFundingRefOps": null,
+        "cofundProgramRef": null,
+        "selfFundProgramRef": null,
+        "espaFundProgramRef": null,
+        "regularBudgetFundedProgramRef": "070.0000000.000 "
+      },
+      "contractingDataDetails": {
+        "unitsOperator": {
+          "key": "80712",
+          "value": "ΔΗΜΟΣ ΔΟΚΙΜΗΣ"
+        },
+        "signers": {
+          "key": "100085004",
+          "value": "ΟΝΟΜΑ ΕΠΩΝΥΜΟ - Δήμαρχος"
+        },
+        "contractingMembersDataList": [
+          {
+            "country": {
+              "key": "GR",
+              "value": "Ελλάδα"
+            },
+            "vatNumber": "888000220",
+            "greekVatNumber": false,
+            "name": "ΑΝΩΝΥΜΟΣ ΑΝΑΔΟΧΟΣ ΑΕ"
+          }
+        ]
+      },
+      "totalCostWithVAT": 6553.65,
+      "totalCostWithoutVAT": 5285.2,
+      "objectDetailsList": [
+        {
+          "quantity": 1,
+          "type": {
+            "key": "AG-001",
+            "value": "Μελέτη"
+          },
+          "costWithoutVAT": 5285.2,
+          "vat": "24",
+          "currency": {
+            "key": "EUR",
+            "value": "Ευρώ"
+          },
+          "shortDescription": "Συντήρηση πυροσβεστήρων",
+          "cpvs": [
+            {
+              "key": "75251000-0",
+              "value": "Πυροσβεστικές υπηρεσίες"
+            }
+          ],
+          "greenContracts": {
+            "key": "1",
+            "value": "Δεν εμπίπτει στο ΕΣΔ"
+          },
+          "goodServices": null,
+          "cityOfConstruction": null,
+          "countryOfDelivery": {
+            "key": "GR",
+            "value": "Ελλάδα"
+          },
+          "addressForDelivery": null,
+          "postalCode": null,
+          "city": "ΔΟΚΙΜΗ",
+          "streetNumber": null,
+          "budgetCode": null,
+          "requestRefNo": "26AWRD019200977"
+        }
+      ],
+      "additionalContractTypes": null,
+      "mixedContract": false,
+      "requestRefNo": null,
+      "nextRefNo": null,
+      "nextExtended": null,
+      "nextModified": null,
+      "auctionRefNo": "26AWRD019200977",
+      "paymentRefNo": []
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "first": true,
+  "last": true,
+  "numberOfElements": 1,
+  "size": 50,
+  "number": 0,
+  "empty": false
+}
