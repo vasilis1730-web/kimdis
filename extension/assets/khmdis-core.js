@@ -82,7 +82,9 @@
     retries: 2,
     cacheTtl: 10 * 60 * 1000,
     /** Αν false, δεν χτυπάμε καθόλου τη Διαύγεια */
-    useDiavgeia: true
+    useDiavgeia: true,
+    /** Επιπλέον σάρωση της δημόσιας σελίδας ΚΗΜΔΗΣ (ένα αίτημα ανά κόμβο) */
+    scanPublicPage: false
   };
 
   function configure(patch) {
@@ -627,28 +629,97 @@
     });
   }
 
-  /** Επωνυμίες αναδόχων από τις γνωστές λίστες μελών + fallback σε πεδία name. */
-  function extractContractors(data) {
-    const names = new Set();
-    const LISTS = [
-      'contractingMembersDataList', 'awardMembersDataList', 'contractors',
-      'contractorsList', 'suppliers', 'economicOperators', 'awardedOperators'
-    ];
-    LISTS.forEach(listName => {
-      const list = data && data[listName];
-      if (!Array.isArray(list)) return;
-      list.forEach(member => {
-        if (!member) return;
-        const n = member.name || member.contractorName || member.memberOrganizationName ||
-                  member.organizationName || member.companyName || member.fullName;
-        if (n) names.add(String(n).trim());
+  const PARTY_NAME_RE = /^(name|fullName|companyName|contractorName|supplierName|memberOrganizationName|organizationName)$/i;
+
+  /**
+   * Μαζεύει «συμβαλλόμενους» (όνομα + ΑΦΜ) ΟΠΟΥΔΗΠΟΤΕ μέσα στην εγγραφή.
+   *
+   * Απαραίτητο: το ΚΗΜΔΗΣ δεν τους βάζει στην κορυφή. Στην πραγματικότητα
+   * βρίσκονται σε contractingDataDetails.contractingMembersDataList — οπότε
+   * το να κοιτάς μόνο τα κλειδιά της κορυφής δεν βρίσκει κανέναν ανάδοχο.
+   */
+  function collectParties(obj, out, path) {
+    out = out || [];
+    path = path || '';
+    if (!obj || typeof obj !== 'object') return out;
+
+    if (Array.isArray(obj)) {
+      obj.forEach((v, i) => collectParties(v, out, path + '[' + i + ']'));
+      return out;
+    }
+
+    const keys = Object.keys(obj);
+    const vatKey = keys.find(k =>
+      VAT_KEY_RE.test(k) && typeof obj[k] === 'string' && /^\d{9}$/.test(obj[k].trim()));
+    const nameKey = keys.find(k =>
+      PARTY_NAME_RE.test(k) && typeof obj[k] === 'string' && obj[k].trim());
+
+    if (vatKey || nameKey) {
+      out.push({
+        name: nameKey ? String(obj[nameKey]).trim() : null,
+        vat: vatKey ? String(obj[vatKey]).trim() : null,
+        path: path
       });
+    }
+    keys.forEach(k => {
+      const v = obj[k];
+      if (v && typeof v === 'object') collectParties(v, out, path ? path + '.' + k : k);
     });
+    return out;
+  }
+
+  /** Διαδρομές που ανήκουν στην αναθέτουσα αρχή, όχι στον ανάδοχο. */
+  const AUTHORITY_PATH_RE = /(^|\.)organization|authority|signers|unitsOperator|αναθετ/i;
+
+  /** Επωνυμίες αναδόχων — όλα εκτός της αναθέτουσας αρχής. */
+  function extractContractors(data) {
+    const orgVat = clean(getBy(data, [
+      'organizationVatNumber', 'organisationVatNumber', 'greekOrganizationVatNumber'
+    ]) || '');
+    const names = new Set();
+
+    collectParties(data).forEach(party => {
+      if (!party.name) return;
+      if (party.vat && clean(party.vat) === orgVat) return;
+      if (AUTHORITY_PATH_RE.test(party.path)) return;
+      names.add(party.name);
+    });
+
     if (!names.size) {
       ['contractorName', 'supplierName', 'awardContractorName', 'economicOperatorName']
         .forEach(k => { if (data && data[k]) names.add(String(data[k]).trim()); });
     }
     return Array.from(names).filter(Boolean);
+  }
+
+  /**
+   * Τα πεδία με τα οποία το ΚΗΜΔΗΣ δηλώνει ΡΗΤΑ τους γειτονικούς κρίκους.
+   * Καταγράφηκαν από πραγματική απάντηση του API — δεν είναι εικασία.
+   */
+  const LINK_FIELDS = [
+    'prevReferenceNo', 'previousRequestReferenceNumber', 'previousReferenceNumber',
+    'requestRefNo', 'noticeReferenceNumber', 'auctionRefNo', 'contractRefNo',
+    'nextRefNo', 'nextExtended', 'nextModified',
+    'paymentRefNo', 'approvedRequestsList', 'relatedReferenceNumbers'
+  ];
+
+  /** Όλοι οι ΑΔΑΜ που η ίδια η εγγραφή δηλώνει ως συνδεδεμένους. */
+  function extractLinks(data) {
+    const out = new Set();
+    const push = v => {
+      if (v == null) return;
+      if (Array.isArray(v)) { v.forEach(push); return; }
+      if (typeof v === 'object') { push(v.referenceNumber || v.value || v.key); return; }
+      const s = clean(v);
+      if (isAdam(s)) out.add(s);
+    };
+    LINK_FIELDS.forEach(f => push(data && data[f]));
+    // Το ΚΗΜΔΗΣ βάζει σύνδεσμο και μέσα σε κάθε τμήμα της σύμβασης
+    const objects = data && data.objectDetailsList;
+    if (Array.isArray(objects)) {
+      objects.forEach(o => LINK_FIELDS.forEach(f => push(o && o[f])));
+    }
+    return Array.from(out);
   }
 
   /** Όλοι οι CPV της εγγραφής, με περιγραφή τμήματος. */
@@ -682,7 +753,8 @@
   function extractAmounts(data) {
     return {
       withoutVat: toNumber(getBy(data, [
-        'totalCostWithoutVAT', 'estimatedTotalCostWithoutVAT', 'budgetWithoutVAT', 'budget', 'amountWithoutVAT'
+        'totalCostWithoutVAT', 'estimatedTotalCostWithoutVAT', 'contractBudget',
+        'budgetWithoutVAT', 'budget', 'amountWithoutVAT'
       ])),
       withVat: toNumber(getBy(data, [
         'totalCostWithVAT', 'estimatedTotalCostWithVAT', 'budgetWithVAT', 'amountWithVAT', 'totalAmount'
@@ -704,18 +776,43 @@
     const d = node.data || {};
     const amounts = extractAmounts(d);
     const vats = extractVats(d);
+    // Τα ονόματα πεδίων καταγράφηκαν από πραγματική απάντηση του API.
+    // Οι εναλλακτικές κρατιούνται γιατί κάθε στάδιο διαφέρει ελαφρώς.
     return {
       adam: node.adam,
       stage: node.stage,
       title: getBy(d, ['title', 'subject', 'description']),
       date: extractDate(d),
       esidis: getBy(d, ['systemicNumber', 'esidisNumber', 'systemNumber']),
-      previousAdam: clean(getBy(d, ['previousRequestReferenceNumber', 'previousReferenceNumber']) || '') || null,
-      ada: getBy(d, ['diavgeiaADA', 'ada', 'adaNumber']),
+      previousAdam: clean(getBy(d, [
+        'prevReferenceNo', 'previousRequestReferenceNumber', 'previousReferenceNumber', 'requestRefNo'
+      ]) || '') || null,
+      links: extractLinks(d),
+      ada: getBy(d, [
+        'diavgeiaADA', 'contractRelatedADA.number3', 'contractRelatedADA.number2',
+        'contractRelatedADA.number1', 'decisionRelatedAda', 'cancellationADA', 'ada'
+      ]),
       aaht: getBy(d, ['aaht']),
       contractNumber: getBy(d, ['contractNumber']),
-      organizationName: getBy(d, ['organizationName', 'organisationName', 'authorityName']),
-      organizationVat: getBy(d, ['organizationVatNumber', 'organisationVatNumber']),
+      organizationName: getBy(d, [
+        'organization.value', 'organizationName', 'organisationName', 'authorityName',
+        'contractingDataDetails.unitsOperator.value'
+      ]),
+      organizationVat: getBy(d, [
+        'organizationVatNumber', 'organisationVatNumber', 'greekOrganizationVatNumber'
+      ]),
+      procedureType: getBy(d, ['procedureType']),
+      contractType: getBy(d, ['contractType']),
+      legalContext: getBy(d, ['legalContext']),
+      assignCriteria: getBy(d, ['assignCriteria']),
+      city: getBy(d, ['nutsCity', 'nutsCode.value']),
+      duration: getBy(d, ['contractDuration']),
+      durationUnit: getBy(d, ['contractDurationUnitOfMeasure']),
+      cancelled: d.cancelled === true,
+      funding: getBy(d, [
+        'fundingDetails.regularBudgetFundedProgramRef', 'fundingDetails.publicFundingRef',
+        'fundingDetails.espaFundProgramRef', 'fundingDetails.cofundProgramRef'
+      ]),
       contractors: extractContractors(d),
       contractorVats: vats.filter(v => v.role === 'contractor').map(v => v.vat),
       authorityVats: vats.filter(v => v.role === 'authority').map(v => v.vat),
@@ -760,34 +857,6 @@
     } catch (e) {
       return [];
     }
-  }
-
-  /**
-   * Ψάχνει ΜΠΡΟΣΤΑ: ποιες εγγραφές δηλώνουν τον `adam` ως προηγούμενό τους,
-   * και ποιες μοιράζονται τον ίδιο Α/Α ΕΣΗΔΗΣ.
-   * Τα φίλτρα δοκιμάζονται «μαλακά» — αν το API δεν τα υποστηρίζει, αγνοούνται.
-   */
-  async function findDescendants(adam, esidis, options) {
-    const found = new Set();
-    const filters = [{ previousRequestReferenceNumber: adam }];
-    if (esidis) filters.push({ systemicNumber: String(esidis) });
-
-    const jobs = [];
-    STAGE_LIST.forEach(stage => filters.forEach(filter => jobs.push({ stage, filter })));
-
-    const results = await pool(jobs, async job => {
-      const rows = await queryStage(job.stage.key, job.filter, { signal: options && options.signal, retries: 0 });
-      return rows;
-    }, config.concurrency);
-
-    results.forEach(r => {
-      if (!r.ok || !Array.isArray(r.value)) return;
-      r.value.forEach(row => {
-        const id = clean(row && row.referenceNumber);
-        if (isAdam(id)) found.add(id);
-      });
-    });
-    return Array.from(found);
   }
 
   /**
@@ -868,18 +937,26 @@
       if (!expand.length) continue;
 
       // Διεύρυνση: (α) ΑΔΑΜ μέσα στα ίδια τα δεδομένα, (β) απόγονοι, (γ) HTML σελίδα
-      const discovered = await pool(expand, async entry => {
-        const sum = summarize(entry.rec);
-        const out = new Set(scanAdams(entry.rec.data));
-        if (sum.previousAdam) out.add(sum.previousAdam);
-        const [kids, page] = await Promise.all([
-          findDescendants(entry.rec.adam, sum.esidis, opts).catch(() => []),
-          scanPublicPage(entry.rec.adam, opts).catch(() => [])
-        ]);
-        kids.forEach(a => out.add(a));
-        page.forEach(a => out.add(a));
-        return { depth: entry.depth, adams: Array.from(out) };
-      }, Math.max(1, Math.floor(config.concurrency / 2)));
+      // Η ίδια η εγγραφή δηλώνει τους γείτονές της (auctionRefNo, paymentRefNo,
+      // prevReferenceNo, noticeReferenceNumber…), οπότε η διεύρυνση δεν κοστίζει
+      // ούτε ένα αίτημα. Παλιότερα ρωτούσαμε το API με εικαζόμενα φίλτρα — τα
+      // οποία δεν υποστηρίζονται, και φόρτωναν τον server με 10 άχρηστες κλήσεις
+      // ανά κόμβο.
+      const discovered = expand.map(entry => {
+        const out = new Set(extractLinks(entry.rec.data));
+        scanAdams(entry.rec.data).forEach(a => out.add(a));
+        return { ok: true, value: { depth: entry.depth, adams: Array.from(out) } };
+      });
+
+      // Προαιρετική επιπλέον πηγή: η δημόσια σελίδα. Κλειστή από προεπιλογή —
+      // κοστίζει ένα αίτημα ανά κόμβο και σπάνια προσθέτει κάτι.
+      if (config.scanPublicPage) {
+        const pages = await pool(expand, entry => scanPublicPage(entry.rec.adam, opts),
+          Math.max(1, Math.floor(config.concurrency / 2)));
+        pages.forEach((r, i) => {
+          if (r.ok) r.value.forEach(a => discovered[i].value.adams.push(a));
+        });
+      }
 
       discovered.forEach(r => {
         if (!r.ok) return;
@@ -1346,7 +1423,7 @@
     queryStage, fetchRecord, attachmentUrl, officialUrl, diavgeiaUrl, toRecords,
     walk, extractVats, extractContractors, extractCpvs, extractQuantities,
     extractAmounts, extractDate, summarize,
-    buildChain, resolveViaDiavgeia, findDescendants,
+    buildChain, resolveViaDiavgeia, extractLinks, collectParties,
     analyze,
     EXPORT_COLUMNS, buildTable, toCsv, toXlsxBlob, toPlainText, buildZip, download,
     diagnose

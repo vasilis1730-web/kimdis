@@ -51,42 +51,52 @@ const REC = {
   '24REQ000000101': {
     referenceNumber: '24REQ000000101', title: 'Πρωτογενές αίτημα για συντήρηση οδικού δικτύου',
     signedDate: '2024-02-10', totalCostWithoutVAT: 10000, totalCostWithVAT: 12400,
-    organizationName: 'ΔΗΜΟΣ ΡΟΔΟΥ', organizationVatNumber: VAT_AUTHORITY,
-    objectDetailsList: [{ cpvs: [{ key: '45233142-6', value: 'Εργασίες επισκευής οδών' }], quantity: 1 }]
+    organization: { key: '6239', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' }, organizationVatNumber: VAT_AUTHORITY,
+    objectDetailsList: [{ cpvs: [{ key: '45233142-6', value: 'Εργασίες επισκευής οδών' }], quantity: 1 }],
+    nextRefNo: '24PROC000000102'
   },
   '24PROC000000102': {
     referenceNumber: '24PROC000000102', title: 'Διακήρυξη ανοικτού διαγωνισμού',
-    signedDate: '2024-03-01', previousRequestReferenceNumber: '24REQ000000101',
+    signedDate: '2024-03-01', prevReferenceNo: '24REQ000000101', nextRefNo: '24AWRD000000103',
     systemicNumber: SYS, estimatedTotalCostWithoutVAT: 10000,
-    organizationName: 'ΔΗΜΟΣ ΡΟΔΟΥ', organizationVatNumber: VAT_AUTHORITY
+    organization: { key: '6239', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' }, organizationVatNumber: VAT_AUTHORITY
   },
   '24AWRD000000103': {
     referenceNumber: '24AWRD000000103', title: 'Κατακύρωση αποτελέσματος διαγωνισμού',
     signedDate: '2024-05-20', systemicNumber: SYS,
-    organizationName: 'ΔΗΜΟΣ ΡΟΔΟΥ', organizationVatNumber: VAT_AUTHORITY,
-    awardMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }]
+    noticeReferenceNumber: '24PROC000000102', nextRefNo: '26SYMV019210768',
+    organization: { key: '6239', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' }, organizationVatNumber: VAT_AUTHORITY,
+    contractingDataDetails: {
+      signers: { key: '1', value: 'ΔΗΜΑΡΧΟΣ ΡΟΔΟΥ - Δήμαρχος' },
+      contractingMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }]
+    }
   },
   '26SYMV019210768': {
     referenceNumber: '26SYMV019210768', title: 'Σύμβαση συντήρησης οδικού δικτύου Δήμου Ρόδου',
     contractSignedDate: '2024-06-15', contractNumber: '145/2024', systemicNumber: SYS,
-    totalCostWithoutVAT: 8000, totalCostWithVAT: 9920,
-    startDate: '2024-07-01', endDate: '2025-06-30', diavgeiaADA: 'ΨΨ4Ξ46ΜΤΛ6-Ξ7Θ',
-    organizationName: 'ΔΗΜΟΣ ΡΟΔΟΥ', organizationVatNumber: VAT_AUTHORITY,
-    contractingMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }],
-    objectDetailsList: [{ cpvs: [{ key: '45233142-6', value: 'Εργασίες επισκευής οδών' }], quantity: 2 }]
+    totalCostWithoutVAT: 8000, totalCostWithVAT: 9920, contractBudget: 8000,
+    startDate: '2024-07-01', endDate: '2025-06-30',
+    contractRelatedADA: { number1: null, number2: null, number3: 'ΨΨ4Ξ46ΜΤΛ6-Ξ7Θ' },
+    procedureType: { key: '6', value: 'Απευθείας ανάθεση' },
+    contractType: { key: '9', value: 'Υπηρεσίες' },
+    organization: { key: '6239', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' }, organizationVatNumber: VAT_AUTHORITY,
+    contractingDataDetails: {
+      unitsOperator: { key: '80712', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' },
+      contractingMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }]
+    },
+    objectDetailsList: [{ cpvs: [{ key: '45233142-6', value: 'Εργασίες επισκευής οδών' }], quantity: 2 }],
+    auctionRefNo: '24AWRD000000103',
+    paymentRefNo: ['24PAY000000104']
   },
   '24PAY000000104': {
     referenceNumber: '24PAY000000104', title: 'Εντολή πληρωμής 1ου λογαριασμού',
     signedDate: '2024-09-30', totalCostWithoutVAT: 4000, totalCostWithVAT: 4960,
-    organizationName: 'ΔΗΜΟΣ ΡΟΔΟΥ', organizationVatNumber: VAT_AUTHORITY,
-    contractingMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }]
+    organization: { key: '6239', value: 'ΔΗΜΟΣ ΡΟΔΟΥ' }, organizationVatNumber: VAT_AUTHORITY,
+    contractRefNo: '26SYMV019210768',
+    contractingDataDetails: {
+      contractingMembersDataList: [{ name: 'ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ', vatNumber: VAT_CONTRACTOR }]
+    }
   }
-};
-const CHILDREN = {
-  '24REQ000000101': ['24PROC000000102'],
-  '24PROC000000102': ['24AWRD000000103'],
-  '24AWRD000000103': ['26SYMV019210768'],
-  '26SYMV019210768': ['24PAY000000104']
 };
 const STAGE_OF = a => ({ REQ: 'request', PROC: 'notice', AWRD: 'auction', SYMV: 'contract', PAY: 'payment' })[
   /\d{2}(REQ|PROC|AWRD|SYMV|PAY)/.exec(a)[1]];
@@ -141,16 +151,10 @@ await page.route(WORKER + '/**', async route => {
     const rec = REC[filter.referenceNumber];
     return json({ content: rec && STAGE_OF(filter.referenceNumber) === stage ? [rec] : [] });
   }
-  if (filter.previousRequestReferenceNumber) {
-    const kids = (CHILDREN[filter.previousRequestReferenceNumber] || []).filter(a => STAGE_OF(a) === stage);
-    return json({ content: kids.map(a => REC[a]) });
-  }
-  if (filter.systemicNumber) {
-    return json({ content: Object.values(REC).filter(r => r.systemicNumber === filter.systemicNumber && STAGE_OF(r.referenceNumber) === stage) });
-  }
   if (filter.organizationVatNumber) {
     return json({ content: Object.values(REC).filter(r => STAGE_OF(r.referenceNumber) === stage) });
   }
+  // Το πραγματικό API δεν υποστηρίζει άλλα φίλτρα — επιστρέφει κενό.
   return json({ content: [] });
 });
 
@@ -186,7 +190,10 @@ check('σειρά σταδίων σωστή',
   JSON.stringify(stageTexts));
 
 const body = await page.textContent('#kmResults');
-check('εμφανίζει τον ανάδοχο', body.includes('ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ'));
+check('εμφανίζει τον ανάδοχο (από εμφωλευμένο contractingDataDetails)', body.includes('ΑΛΦΑ ΤΕΧΝΙΚΗ ΑΕ'));
+check('εμφανίζει τον φορέα από organization.value', body.includes('ΔΗΜΟΣ ΡΟΔΟΥ'));
+check('ο υπογράφων ΔΕΝ εμφανίζεται ως ανάδοχος', !/Ανάδοχος[^<]*<\/div><div[^>]*>[^<]*Δήμαρχος/.test(body));
+check('εμφανίζει τη διαδικασία ανάθεσης', body.includes('Απευθείας ανάθεση'));
 check('εμφανίζει το ΑΦΜ αναδόχου', body.includes(VAT_CONTRACTOR));
 check('εμφανίζει τον αριθμό σύμβασης', body.includes('145/2024'));
 check('εμφανίζει το ΑΔΑ Διαύγειας', body.includes('ΨΨ4Ξ46ΜΤΛ6-Ξ7Θ'));
@@ -295,8 +302,6 @@ await page3.route('**/proxy?*', async route => {
   const stage = up.pathname.split('/').filter(Boolean).pop();
   let f = {}; try { f = JSON.parse(route.request().postData() || '{}'); } catch (e) {}
   if (f.referenceNumber) { const r = REC[f.referenceNumber]; return j({ content: r && STAGE_OF(f.referenceNumber) === stage ? [r] : [] }); }
-  if (f.previousRequestReferenceNumber) return j({ content: (CHILDREN[f.previousRequestReferenceNumber] || []).filter(a => STAGE_OF(a) === stage).map(a => REC[a]) });
-  if (f.systemicNumber) return j({ content: Object.values(REC).filter(r => r.systemicNumber === f.systemicNumber && STAGE_OF(r.referenceNumber) === stage) });
   return j({ content: [] });
 });
 

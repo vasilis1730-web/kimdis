@@ -157,6 +157,59 @@ eq(K.fmtVal({ key: '45', value: 'Κατασκευές' }), 'Κατασκευές
 eq(K.fmtVal(true), 'Ναι', 'boolean → Ναι');
 eq(K.escapeHtml('<script>&"'), '&lt;script&gt;&amp;&quot;', 'escaping HTML');
 
+/* ---------------- ΠΡΑΓΜΑΤΙΚΟ ΣΧΗΜΑ ΚΗΜΔΗΣ ---------------- */
+group('Πραγματικό σχήμα ΚΗΜΔΗΣ (fixture από ζωντανή απάντηση)');
+const real = JSON.parse(fs.readFileSync(path.join(root, 'test/fixtures/contract-real-shape.json'), 'utf8'));
+eq(K.toRecords(real).length, 1, 'αναγνωρίζει τη σελιδοποίηση {content:[…]}');
+const rd = K.toRecords(real)[0];
+const rnode = { adam: rd.referenceNumber, stage: K.stageOfAdam(rd.referenceNumber), data: rd };
+const rs = K.summarize(rnode);
+
+eq(rs.title, 'Παροχή Υπηρεσιών Συντήρησης και Αναγόμωσης Πυροσβεστήρων Σχολικών Κτιρίων', 'τίτλος');
+eq(rs.stage.key, 'contract', 'στάδιο');
+// Ο ανάδοχος είναι φωλιασμένος σε contractingDataDetails.contractingMembersDataList
+eq(rs.contractors, ['ΑΝΩΝΥΜΟΣ ΑΝΑΔΟΧΟΣ ΑΕ'], 'ΑΝΑΔΟΧΟΣ από εμφωλευμένη λίστα (το bug που βρέθηκε ζωντανά)');
+eq(rs.contractorVats, ['888000220'], 'ΑΦΜ αναδόχου');
+eq(rs.authorityVats, ['999000111'], 'ΑΦΜ αναθέτουσας');
+ok(!rs.contractorVats.includes('999000111'), 'το ΑΦΜ του φορέα ΔΕΝ περνά για αναδόχου');
+// organization είναι {key,value}, όχι organizationName
+eq(rs.organizationName, 'ΔΗΜΟΣ ΔΟΚΙΜΗΣ', 'όνομα φορέα από organization.value');
+eq(rs.organizationVat, '999000111', 'ΑΦΜ φορέα');
+// ΑΔΑ: το diavgeiaADA είναι null, ο πραγματικός είναι στο contractRelatedADA.number3
+eq(rs.ada, 'ΨΨ4Ξ46ΜΤΛ6-Ξ7Θ', 'ΑΔΑ από contractRelatedADA.number3');
+eq(rs.amountWithoutVat, 5285.2, 'αξία χωρίς ΦΠΑ');
+eq(rs.amountWithVat, 6553.65, 'αξία με ΦΠΑ');
+eq(rs.contractNumber, '11598', 'αριθμός σύμβασης');
+eq(rs.aaht, '1007.E00000.0001', 'ΑΑΗΤ');
+eq(rs.cpvs.map(c => c.code), ['75251000-0'], 'CPV από objectDetailsList (με ψηφίο ελέγχου)');
+eq(rs.cpvs[0].division, '75', 'τμήμα CPV');
+eq(rs.cpvs[0].divisionLabel, 'Υπηρεσίες δημόσιας διοίκησης, άμυνας και κοινωνικής ασφάλισης', 'περιγραφή CPV');
+eq(rs.quantities, [1], 'ποσότητα');
+eq(K.fmtVal(rs.procedureType), 'Απευθείας ανάθεση (6)', 'είδος διαδικασίας');
+eq(K.fmtVal(rs.contractType), 'Υπηρεσίες (9)', 'είδος σύμβασης');
+eq(rs.city, 'ΔΟΚΙΜΗ', 'τόπος');
+eq(rs.duration, 6, 'διάρκεια');
+eq(rs.cancelled, false, 'μη ακυρωμένη');
+ok(String(rs.funding).includes('070.'), 'χρηματοδότηση');
+
+group('Σύνδεσμοι αλυσίδας από τα ρητά πεδία του API');
+eq(K.extractLinks(rd), ['26AWRD019200977'], 'auctionRefNo + objectDetailsList[].requestRefNo (χωρίς διπλά)');
+eq(rs.links, ['26AWRD019200977'], 'το summary μεταφέρει τους συνδέσμους');
+ok(K.scanAdams(rd).includes('26AWRD019200977'), 'και η σάρωση κειμένου τον βρίσκει');
+// Δεν πρέπει να θεωρεί σύνδεσμο τον εαυτό της
+eq(K.extractLinks({ referenceNumber: '26SYMV019210768', auctionRefNo: null, paymentRefNo: [] }), [],
+   'κενά πεδία συνδέσμων δεν παράγουν τίποτα');
+eq(K.extractLinks({ paymentRefNo: ['24PAY000000001', '24PAY000000002'] }),
+   ['24PAY000000001', '24PAY000000002'], 'paymentRefNo ως πίνακας');
+eq(K.extractLinks({ approvedRequestsList: [{ referenceNumber: '24REQ000000009' }] }),
+   ['24REQ000000009'], 'approvedRequestsList ως αντικείμενα');
+
+group('Συμβαλλόμενοι — βαθιά αναζήτηση');
+const parties = K.collectParties(rd);
+ok(parties.some(p => p.name === 'ΑΝΩΝΥΜΟΣ ΑΝΑΔΟΧΟΣ ΑΕ' && p.vat === '888000220'), 'βρίσκει τον ανάδοχο σε βάθος 2');
+ok(!K.extractContractors(rd).includes('ΔΗΜΟΣ ΔΟΚΙΜΗΣ'), 'ο φορέας ΔΕΝ περνά για ανάδοχος');
+ok(!K.extractContractors(rd).some(n => n.includes('Δήμαρχος')), 'ο υπογράφων ΔΕΝ περνά για ανάδοχος');
+
 /* ---------------- Excel ---------------- */
 group('Παραγωγή Excel (.xlsx)');
 (async () => {

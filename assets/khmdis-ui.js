@@ -98,7 +98,13 @@
       NOT_FOUND: 'Έλεγξε τον ΑΔΑΜ. Θυμήσου ότι κάθε στάδιο έχει δικό του ΑΔΑΜ (REQ, PROC, AWRD, SYMV, PAY).',
       NO_SEED: 'Δοκίμασε απευθείας με ΑΔΑΜ. Το ΑΔΑ/ΕΣΗΔΗΣ βρίσκεται μέσω Διαύγειας και δεν υπάρχει πάντα.',
       NO_JSZIP: 'Ανανέωσε τη σελίδα. Αν επιμένει, λείπει το αρχείο <code>jszip.min.js</code>.',
-      HTTP_403: 'Ο Worker απέρριψε το αίτημα. Έλεγξε το <code>ALLOWED_ORIGINS</code> στις ρυθμίσεις του.',
+      HTTP_403: 'Δύο πιθανές αιτίες: (α) το ΚΗΜΔΗΣ μπλόκαρε το proxy σου — η Cloudflare του ' +
+                'επιστρέφει <strong>Error 1010</strong> σε αιτήματα που δεν μοιάζουν με κανονικό browser· ' +
+                'σε αυτή την περίπτωση χρησιμοποίησε την <strong>επέκταση Chrome</strong>, που καλεί το ' +
+                'ΚΗΜΔΗΣ απευθείας από τον browser σου. (β) το <code>ALLOWED_ORIGINS</code> του Worker σου ' +
+                'δεν περιλαμβάνει τη διεύθυνση αυτής της σελίδας.',
+      HTTP_429: 'Πολλά αιτήματα σε σύντομο διάστημα. Περίμενε λίγο και μείωσε τα ' +
+                '«Ταυτόχρονα αιτήματα» στις Ρυθμίσεις.',
       HTTP_404: 'Η διεύθυνση δεν βρέθηκε. Ίσως άλλαξε το API του ΚΗΜΔΗΣ.'
     };
     return { message: msg, tip: tips[code] || null, code: code || null };
@@ -406,7 +412,19 @@
       add('Ποσότητες', s.quantities.length ? s.quantities.join(', ') : null);
       add('Έναρξη', s.startDate ? K.fmtDate(s.startDate) : null);
       add('Λήξη', s.endDate ? K.fmtDate(s.endDate) : null);
+      if (s.duration) {
+        add('Διάρκεια', s.duration + (s.durationUnit ? ' ' + K.fmtVal(s.durationUnit) : ''));
+      }
+      add('Είδος σύμβασης', s.contractType ? K.fmtVal(s.contractType) : null);
+      add('Διαδικασία', s.procedureType ? K.fmtVal(s.procedureType) : null);
+      add('Κριτήριο ανάθεσης', s.assignCriteria ? K.fmtVal(s.assignCriteria) : null);
+      add('Νομικό πλαίσιο', s.legalContext ? K.fmtVal(s.legalContext) : null);
+      add('Τόπος', s.city ? K.fmtVal(s.city) : null);
+      add('Χρηματοδότηση', s.funding ? String(s.funding).trim() : null, true);
       add('Προηγούμενος ΑΔΑΜ', s.previousAdam, true);
+      if (s.links && s.links.length) {
+        add('Συνδεδεμένοι ΑΔΑΜ', s.links.filter(a => a !== s.previousAdam), true);
+      }
 
       const all = K.flatten(n.data);
 
@@ -422,6 +440,7 @@
             <span class="km-chip km-chip-stage" style="background:${n.stage.color}">${index + 1} / ${nodes.length}</span>
           </div>
           <div class="km-card-body">
+            ${s.cancelled ? '<div class="km-alert km-alert-error" style="margin:0 0 12px"><strong>Ακυρωμένη πράξη</strong>Η εγγραφή φέρεται ως ακυρωμένη στο ΚΗΜΔΗΣ.</div>' : ''}
             ${s.title ? '<div class="km-card-title">' + esc(s.title) + '</div>' : ''}
             <div class="km-meta">
               ${rows.map(([k, v, mono]) =>
