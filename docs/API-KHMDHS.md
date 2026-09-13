@@ -48,7 +48,7 @@ Content-Type: application/json
 | `requestRefNo` | το αίτημα |
 | `noticeReferenceNumber` | τη διακήρυξη |
 | `auctionRefNo` | την ανάθεση |
-| `contractRefNo` | τη σύμβαση |
+| `contractRefNo` | τη σύμβαση — **μπορεί να είναι πίνακας** |
 | `nextRefNo`, `nextExtended`, `nextModified` | επόμενες / τροποποιητικές |
 | `paymentRefNo` | **πίνακας** ΑΔΑΜ πληρωμών |
 | `approvedRequestsList` | **πίνακας** εγκεκριμένων αιτημάτων |
@@ -78,21 +78,35 @@ Content-Type: application/json
 - Τα CPV ως `{"key": "75251000-0", "value": "Πυροσβεστικές υπηρεσίες"}`
 - Οι ημερομηνίες ISO, άλλοτε με ώρα (`2026-06-11T13:01:21.924`) άλλοτε χωρίς
 
-## ⚠️ Το ΚΗΜΔΗΣ μπλοκάρει server-side κλήσεις
+## Error 1010 — και πώς λύθηκε
 
-Το `cerpp.eprocurement.gov.gr` είναι πίσω από Cloudflare και επιστρέφει
-**Error 1010 — «Access denied, browser signature»** σε αιτήματα που δεν μοιάζουν
-με κανονικό browser. Οι πρώτες κλήσεις του Worker πέρασαν· μετά άρχισε να κόβει
-μόνιμα (δοκιμάστηκε επί ~3 λεπτά, χωρίς ανάκαμψη — δεν είναι rate limit).
+Το `cerpp.eprocurement.gov.gr` είναι πίσω από Cloudflare και απορρίπτει με
+**Error 1010 «Access denied — browser signature»** ό,τι δεν μοιάζει με browser.
 
-**Τι σημαίνει πρακτικά:**
+Ο μηχανισμός επιβεβαιώθηκε πειραματικά. Στο **ίδιο ακριβώς URL**:
 
-| | |
+| Client | Αποτέλεσμα |
 |---|---|
-| 🧩 **Επέκταση Chrome** | Δουλεύει — οι κλήσεις φεύγουν από τον ίδιο σου τον browser |
-| 🌐 **Online μέσω Worker** | Μπορεί να κοπεί με Error 1010 |
+| `curl` | HTTP 200 |
+| `python-urllib` | HTTP 403 |
+| UA `kimdis-proxy/8.1.0 (+github…)` | HTTP 403 |
+| UA κανονικού Chrome | **HTTP 200** ✅ |
 
-Αν η online έκδοση δώσει 403, η εφαρμογή το εξηγεί και παραπέμπει στην επέκταση.
+Ο έλεγχος γίνεται στο **User-Agent**.
+
+**Η λύση:** ο proxy στέκεται στη θέση του browser του χρήστη — κάνει το ίδιο
+αίτημα που κάνει η επέκταση απευθείας από τον Chrome του — οπότε στέλνει και τις
+ίδιες κεφαλίδες (`User-Agent`, `Referer`, `Origin`). Δεν είναι σάρωση: μια πλήρης
+αναζήτηση αλυσίδας κάνει 8 αιτήματα.
+
+Αλλάζει με τη μεταβλητή περιβάλλοντος `USER_AGENT`, χωρίς αλλαγή κώδικα.
+
+**Επιβεβαιώθηκε ζωντανά** (13/09/2026) ότι και οι δύο διαδρομές δουλεύουν:
+
+```
+CONTRACT 26SYMV019210768  ──auctionRefNo──►  AUCTION 26AWRD019200977
+AUCTION  26AWRD019200977  ──contractRefNo──►  CONTRACT 26SYMV019210768
+```
 
 ## Πόσα αιτήματα κάνει μια αναζήτηση
 
