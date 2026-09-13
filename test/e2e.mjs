@@ -1,6 +1,36 @@
 /* End-to-end έλεγχος στον πραγματικό Chromium, με προσομοιωμένο API ΚΗΜΔΗΣ.
-   node test/e2e.mjs   (χρειάζεται τοπικό server στο :8765) */
+   node test/e2e.mjs   — σηκώνει μόνο του τοπικό server στο :8765 */
 import { chromium } from '/tmp/claude-0/-home-user-kimdis/4eb64f42-fd49-56e2-aedc-2f0d860a6992/scratchpad/node_modules/playwright-core/index.mjs';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Σηκώνει τοπικό server αν δεν τρέχει ήδη κάποιος στη θύρα. */
+async function ensureServer(port) {
+  const alive = async () => {
+    try {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 800);
+      const r = await fetch('http://127.0.0.1:' + port + '/index.html', { signal: c.signal });
+      clearTimeout(t);
+      return r.ok;
+    } catch (e) { return false; }
+  };
+  if (await alive()) return null;
+
+  const proc = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'],
+    { cwd: ROOT, stdio: 'ignore', detached: false });
+  for (let i = 0; i < 40; i++) {
+    await new Promise(r => setTimeout(r, 150));
+    if (await alive()) return proc;
+  }
+  proc.kill();
+  throw new Error('Ο τοπικός server δεν σηκώθηκε στη θύρα ' + port);
+}
+
+const server = await ensureServer(8765);
 
 const BASE = 'http://127.0.0.1:8765/';
 const WORKER = 'https://mock-worker.test';
@@ -305,6 +335,7 @@ check('καμία εξαίρεση JavaScript', real.length === 0, real.slice(0,
 
 console.log('\n  (αιτήματα API που έγιναν: ' + apiCalls + ')');
 await browser.close();
+if (server) server.kill();
 
 console.log('\n' + '='.repeat(52));
 console.log(fail === 0 ? `✅ ΟΛΑ ΠΕΡΑΣΑΝ — ${pass} έλεγχοι` : `❌ ${fail} ΑΠΕΤΥΧΑΝ (${pass} πέρασαν)`);

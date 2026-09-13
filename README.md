@@ -81,21 +81,22 @@
 
 ## Εγκατάσταση — Online εφαρμογή
 
-### Ο συντομότερος δρόμος: Cloudflare Pages
+### Ο συντομότερος δρόμος: Cloudflare
 
-Το proxy που χρειάζεται η online έκδοση **βρίσκεται ήδη μέσα στο repo**
-(`functions/proxy/`). Το Cloudflare Pages το ανεβάζει μαζί με το site, στην ίδια
-διεύθυνση — οπότε δεν κάνεις ξεχωριστό deploy και δεν ρυθμίζεις κανένα URL.
+Το proxy που χρειάζεται η online έκδοση **βρίσκεται ήδη μέσα στο repo** και
+ανεβαίνει μαζί με το site, στην ίδια διεύθυνση — οπότε δεν κάνεις ξεχωριστό
+deploy και δεν ρυθμίζεις κανένα URL. Υποστηρίζονται και οι δύο ροές:
 
-1. <https://dash.cloudflare.com> → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-2. Διάλεξε `vasilis1730-web/kimdis`
-3. Build command: **κενό** · Build output directory: **`/`** · Framework preset: **None**
-4. **Save and Deploy**
+- **Workers** (η νέα): *Create* → *Import a repository* → `vasilis1730-web/kimdis`
+  → Build command **κενό** → **Deploy**. Τη ρύθμιση τη δίνει το `wrangler.jsonc`.
+- **Pages** (η παλιότερη): *Create* → *Pages* → *Connect to Git* → Build output
+  directory **`/`** → **Save and Deploy**. Το proxy είναι το `functions/proxy/`.
 
-Άνοιξε τη διεύθυνση που σου δίνει (π.χ. `https://kimdis.pages.dev`). Η εφαρμογή
-γράφει *«Έτοιμο — το proxy βρέθηκε αυτόματα»* και δουλεύει.
+⚠️ Το Cloudflare χτίζει το **προεπιλεγμένο branch**. Βεβαιώσου ότι ο νέος
+κώδικας έχει γίνει merge στο `main` πριν κάνεις deploy.
 
-Κάθε `git push` στο `main` ανεβάζει αυτόματα σελίδα και proxy μαζί.
+Άνοιξε τη διεύθυνση που σου δίνει. Η εφαρμογή γράφει *«Έτοιμο — το proxy
+βρέθηκε αυτόματα»* και δουλεύει.
 
 ### Αν φιλοξενείς τη σελίδα αλλού (π.χ. GitHub Pages)
 
@@ -129,8 +130,10 @@ index.html            online εφαρμογή      manifest.webmanifest   PWA
 sw.js                 service worker       build.sh               συγχρονισμός + zip
 extension/            επέκταση Chrome      test/                  έλεγχοι
 
-functions/proxy/      Cloudflare Pages Function — φεύγει ΜΑΖΙ με το site
-worker/proxy-core.js  η λογική του proxy (κοινή)
+worker/proxy-core.js  η λογική του proxy (μία φορά, κοινή για όλους)
+wrangler.jsonc        ρύθμιση για Cloudflare Workers (νέα ροή)
+worker-site.js         ↳ σερβίρει site + /proxy μαζί
+functions/proxy/      Cloudflare Pages Function (παλιότερη ροή)
 worker/worker.js      αυτόνομος Worker, αν τον θες ξεχωριστά
 ```
 
@@ -150,11 +153,10 @@ worker/worker.js      αυτόνομος Worker, αν τον θες ξεχωρι
 
 ```bash
 node test/core.test.js      # 70 έλεγχοι — ΑΔΑΜ, ΑΦΜ, CPV, ποσά, ανάλυση, CSV
-node test/worker.test.mjs   # 27 έλεγχοι — proxy: δρομολόγηση, ασφάλεια, Pages Functions
-
-python3 -m http.server 8765 &
+node test/worker.test.mjs   # 35 έλεγχοι — proxy: ασφάλεια, Pages Functions, Workers
 node test/e2e.mjs           # 54 έλεγχοι — πλήρης ροή σε πραγματικό Chromium
 ```
+*(Το `e2e.mjs` σηκώνει μόνο του τοπικό server· χρειάζεται Chromium μέσω Playwright.)*
 
 Το `e2e.mjs` σηκώνει Chromium με προσομοιωμένο API ΚΗΜΔΗΣ και ελέγχει ολόκληρη
 τη διαδρομή: σάρωση αλυσίδας από τον μεσαίο κρίκο, οικονομικά, τις τρεις

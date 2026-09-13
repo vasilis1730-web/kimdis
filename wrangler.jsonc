@@ -1,0 +1,24 @@
+{
+  // Ρύθμιση για Cloudflare Workers («Import a repository»).
+  // Σερβίρει το στατικό site ΚΑΙ το proxy από την ίδια διεύθυνση.
+  //
+  // Δεν χρειάζεται build command — είναι καθαρά στατικά αρχεία.
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "kimdis",
+  "main": "worker-site.js",
+  "compatibility_date": "2025-05-05",
+
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+
+  // Προαιρετικό, αφού δεις τη διεύθυνσή σου — περιορίζει ποιος μπορεί να
+  // χρησιμοποιεί το proxy σου:
+  //
+  // "vars": { "ALLOWED_ORIGINS": "https://kimdis.<λογαριασμός>.workers.dev" }
+}

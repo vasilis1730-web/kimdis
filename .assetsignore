@@ -1,0 +1,14 @@
+# Αρχεία που ΔΕΝ ανεβαίνουν ως στατικό περιεχόμενο του site.
+# Ο κώδικας του Worker πακετάρεται ξεχωριστά, οπότε το worker/ μπορεί να λείπει.
+/src/
+/test/
+/worker/
+/functions/
+/dist/
+/node_modules/
+/.git/
+/.github/
+build.sh
+wrangler.jsonc
+worker-site.js
+.assetsignore

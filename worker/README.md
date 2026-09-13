@@ -11,58 +11,65 @@
 
 ---
 
-# ΔΡΟΜΟΣ Α — Cloudflare Pages *(συνιστάται)*
+# ΔΡΟΜΟΣ Α — Μαζί με το site *(συνιστάται)*
 
 **Δεν κάνεις deploy τίποτα ξεχωριστό και δεν ρυθμίζεις κανένα URL.**
-Το proxy βρίσκεται ήδη μέσα στο repo, στον φάκελο `functions/`. Το Cloudflare
-Pages το ανεβάζει **μαζί με το site**, στην ίδια διεύθυνση. Η εφαρμογή το βρίσκει
-μόνη της.
+Το proxy βρίσκεται ήδη μέσα στο repo και ανεβαίνει **μαζί με το site**, στην ίδια
+διεύθυνση. Η εφαρμογή το βρίσκει μόνη της χτυπώντας `/proxy/health`.
 
-### Βήμα 1 — Άνοιξε το Cloudflare dashboard
-<https://dash.cloudflare.com> → στο αριστερό μενού **Workers & Pages**
+Το repo υποστηρίζει **και τις δύο** ροές της Cloudflare:
 
-### Βήμα 2 — Δημιούργησε project από το GitHub
-**Create** → καρτέλα **Pages** → **Connect to Git**
+| Ροή | Τι το κάνει | Αρχεία |
+|---|---|---|
+| **Workers** — «Import a repository» *(η νέα, αυτή που βλέπεις σήμερα)* | `worker-site.js` σερβίρει τα στατικά και κρατά το `/proxy` | `wrangler.jsonc`, `worker-site.js` |
+| **Pages** — «Connect to Git» *(η παλιότερη)* | Pages Function στο `/proxy` | `functions/proxy/` |
 
-*(Ανάλογα με την έκδοση του dashboard μπορεί να γράφει «Import a repository».)*
+Ό,τι κι αν διαλέξεις, δουλεύει χωρίς αλλαγές.
 
-### Βήμα 3 — Διάλεξε το repo
-Επίλεξε **`vasilis1730-web/kimdis`** → **Begin setup**
+> ⚠️ **Πριν από οτιδήποτε:** βεβαιώσου ότι ο νέος κώδικας είναι στο branch που
+> θα χτιστεί. Το Cloudflare χτίζει το **προεπιλεγμένο branch** (`main`). Αν ο
+> κώδικας είναι ακόμη σε άλλο branch, κάνε πρώτα merge — αλλιώς θα ανεβάσει την
+> παλιά έκδοση.
 
-Αν δεν εμφανίζεται: **Add account** / **Configure GitHub App** και δώσε πρόσβαση
-στο συγκεκριμένο repo.
+### Βήματα (ροή Workers)
 
-### Βήμα 4 — Ρυθμίσεις build
+1. <https://dash.cloudflare.com> → **Workers & Pages** → **Create**
+2. **Import a repository** → διάλεξε **`vasilis1730-web/kimdis`**
+3. Στην οθόνη **Set up your application**:
 
-| Πεδίο | Τιμή |
-|---|---|
-| Project name | `kimdis` |
-| Production branch | `main` |
-| Framework preset | **None** |
-| Build command | **κενό** |
-| Build output directory | **`/`** |
+   | Πεδίο | Τιμή |
+   |---|---|
+   | Project name | `kimdis` |
+   | Build command | **άφησέ το κενό** |
 
-Δεν υπάρχει βήμα build — είναι καθαρά στατικά αρχεία.
+   Δεν υπάρχει βήμα build — το `wrangler.jsonc` λέει στη Cloudflare τι να κάνει.
 
-### Βήμα 5 — Save and Deploy
-Σε ~1 λεπτό θα σου δώσει διεύθυνση της μορφής:
+4. **Deploy**
 
+Σε ~1 λεπτό παίρνεις διεύθυνση της μορφής:
 ```
-https://kimdis.pages.dev
+https://kimdis.<ο-λογαριασμός-σου>.workers.dev
 ```
 
-### Βήμα 6 — Άνοιξέ την
-**Αυτό ήταν.** Η εφαρμογή θα γράψει *«Έτοιμο — το proxy βρέθηκε αυτόματα»*
-και δουλεύει. Δεν έχεις να καταχωρίσεις κανένα URL πουθενά.
+### Βήματα (ροή Pages)
 
-### Έλεγχος
-Άνοιξε `https://kimdis.pages.dev/proxy/health` — πρέπει να δεις:
+1. **Workers & Pages** → **Create** → καρτέλα **Pages** → **Connect to Git**
+2. Διάλεξε `vasilis1730-web/kimdis`
+3. Framework preset **None** · Build command **κενό** · Build output directory **`/`**
+4. **Save and Deploy**
+
+### Τελευταίο βήμα (και για τις δύο)
+
+Άνοιξε τη διεύθυνση. Η εφαρμογή γράφει *«Έτοιμο — το proxy βρέθηκε αυτόματα»*
+και δουλεύει. **Δεν έχεις να καταχωρίσεις τίποτα.**
+
+**Έλεγχος:** άνοιξε `<η-διεύθυνσή-σου>/proxy/health` — πρέπει να δεις:
 ```json
 { "ok": true, "service": "kimdis-proxy", "version": "8.1.0" }
 ```
 
-Από εδώ και πέρα, κάθε `git push` στο `main` ξανα-ανεβάζει αυτόματα και τη
-σελίδα και το proxy.
+Από εδώ και πέρα, κάθε `git push` στο branch που έχεις ρυθμίσει ξανα-ανεβάζει
+αυτόματα και τη σελίδα και το proxy.
 
 ---
 
@@ -167,7 +174,9 @@ ALLOWED_ORIGINS = "https://kimdis.pages.dev"
 
 | Σύμπτωμα | Τι να δεις |
 |---|---|
-| «Δεν βρέθηκε proxy» σε Pages | Άνοιξε `/proxy/health`. Αν δίνει 404, ο φάκελος `functions/` δεν ανέβηκε — έλεγξε ότι το **Build output directory** είναι `/` |
+| Ανέβηκε η παλιά έκδοση | Το Cloudflare χτίζει το προεπιλεγμένο branch. Κάνε merge τον νέο κώδικα στο `main`, ή άλλαξε το branch στις ρυθμίσεις του project |
+| «Δεν βρέθηκε proxy» σε **Workers** | Άνοιξε `/proxy/health`. Αν δίνει 404, δεν διαβάστηκε το `wrangler.jsonc` — βεβαιώσου ότι είναι στη ρίζα του repo και ότι το **Build command** έμεινε κενό |
+| «Δεν βρέθηκε proxy» σε **Pages** | Άνοιξε `/proxy/health`. Αν δίνει 404, ο φάκελος `functions/` δεν ανέβηκε — έλεγξε ότι το **Build output directory** είναι `/` |
 | `HOST_NOT_ALLOWED` | Ζητήθηκε host εκτός λίστας· κανονικά δεν συμβαίνει |
 | `HTTP 403` από το proxy | Το `ALLOWED_ORIGINS` δεν περιλαμβάνει τη διεύθυνση της σελίδας σου |
 | `UPSTREAM_UNREACHABLE` | Το ΚΗΜΔΗΣ δεν απαντά — δοκίμασε αργότερα |

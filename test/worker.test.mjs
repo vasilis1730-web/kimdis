@@ -117,6 +117,49 @@ r = await proxyFn({ request: new Request('https://site.pages.dev/proxy'), env: {
 body = await r.json();
 check('/proxy χωρίς url δίνει βοηθητικό μήνυμα', r.status === 400 && body.example.includes('/proxy?url='), body.example);
 
+/* =============== Workers: static assets + proxy μαζί =============== */
+console.log('\n▸ Cloudflare Workers — site και proxy στην ίδια διεύθυνση');
+const site = (await import('../worker-site.js')).default;
+
+const ASSETS = {
+  async fetch(req) {
+    const p = new URL(req.url).pathname;
+    return new Response('ΑΡΧΕΙΟ:' + p, { status: 200, headers: { 'Content-Type': 'text/html' } });
+  }
+};
+const siteEnv = { ASSETS };
+
+globalThis.fetch = async () => new Response('{"content":[]}', {
+  status: 200, headers: { 'Content-Type': 'application/json' }
+});
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/'), siteEnv, ctx);
+check('η ρίζα σερβίρεται από τα στατικά αρχεία', (await r.text()) === 'ΑΡΧΕΙΟ:/');
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/assets/khmdis-core.js'), siteEnv, ctx);
+check('τα assets σερβίρονται', (await r.text()) === 'ΑΡΧΕΙΟ:/assets/khmdis-core.js');
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/proxy/health'), siteEnv, ctx);
+body = await r.json();
+check('/proxy/health δεν πάει στα αρχεία αλλά στο proxy', r.status === 200 && body.ok === true);
+check('/proxy/health έχει την υπογραφή που ψάχνει η εφαρμογή', body.service === 'kimdis-proxy', body.service);
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/proxy?url=' +
+  encodeURIComponent('https://cerpp.eprocurement.gov.gr/khmdhs-opendata/contract?page=0'),
+  { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"referenceNumber":"26SYMV019210768"}' }),
+  siteEnv, ctx);
+check('/proxy προωθεί κανονικά', r.status === 200 && (await r.json()).content !== undefined);
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/proxy?url=' +
+  encodeURIComponent('https://evil.example.com/x')), siteEnv, ctx);
+check('/proxy κρατά τον έλεγχο ασφαλείας', r.status === 403, r.status);
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/proxy', { method: 'OPTIONS' }), siteEnv, ctx);
+check('preflight στο /proxy απαντά 204', r.status === 204, r.status);
+
+r = await site.fetch(new Request('https://kimdis.workers.dev/index.html'), {}, ctx);
+check('χωρίς binding ASSETS δίνει 404 αντί να σκάσει', r.status === 404, r.status);
+
 console.log('\n' + '='.repeat(52));
 console.log(fail === 0 ? `✅ ΟΛΑ ΠΕΡΑΣΑΝ — ${pass} έλεγχοι` : `❌ ${fail} ΑΠΕΤΥΧΑΝ (${pass} πέρασαν)`);
 console.log('='.repeat(52));
