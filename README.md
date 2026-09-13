@@ -81,33 +81,28 @@
 
 ## Εγκατάσταση — Online εφαρμογή
 
-### 1. Ο Worker (μία φορά)
+### Ο συντομότερος δρόμος: Cloudflare Pages
 
-Η online έκδοση **δεν μπορεί** να καλέσει το ΚΗΜΔΗΣ απευθείας: ο browser το
-μπλοκάρει, επειδή ο server του ΚΗΜΔΗΣ δεν στέλνει κεφαλίδες CORS. Χρειάζεται
-έναν ενδιάμεσο.
+Το proxy που χρειάζεται η online έκδοση **βρίσκεται ήδη μέσα στο repo**
+(`functions/proxy/`). Το Cloudflare Pages το ανεβάζει μαζί με το site, στην ίδια
+διεύθυνση — οπότε δεν κάνεις ξεχωριστό deploy και δεν ρυθμίζεις κανένα URL.
 
-```bash
-npm install -g wrangler
-wrangler login
-cd worker && wrangler deploy
-```
+1. <https://dash.cloudflare.com> → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+2. Διάλεξε `vasilis1730-web/kimdis`
+3. Build command: **κενό** · Build output directory: **`/`** · Framework preset: **None**
+4. **Save and Deploy**
 
-Πλήρεις οδηγίες, και εναλλακτικός τρόπος χωρίς τερματικό: **[`worker/README.md`](worker/README.md)**
+Άνοιξε τη διεύθυνση που σου δίνει (π.χ. `https://kimdis.pages.dev`). Η εφαρμογή
+γράφει *«Έτοιμο — το proxy βρέθηκε αυτόματα»* και δουλεύει.
 
-### 2. Δημοσίευση σελίδας
+Κάθε `git push` στο `main` ανεβάζει αυτόματα σελίδα και proxy μαζί.
 
-Settings → Pages → Source: **Deploy from a branch** → `main` / `/ (root)`.
+### Αν φιλοξενείς τη σελίδα αλλού (π.χ. GitHub Pages)
 
-Η σελίδα θα είναι στο `https://vasilis1730-web.github.io/kimdis/`.
+Το GitHub Pages σερβίρει μόνο στατικά αρχεία — δεν μπορεί να τρέξει το proxy.
+Τότε χρειάζεσαι αυτόνομο Worker και καταχωρίζεις το URL του στις **⚙️ Ρυθμίσεις**.
 
-### 3. Σύνδεση
-
-Άνοιξε τη σελίδα → **⚙️ Ρυθμίσεις** → επικόλλησε το URL του Worker →
-**Αποθήκευση** → **🩺 Διαγνωστικά** για επιβεβαίωση.
-
-Το URL μένει αποθηκευμένο στον browser σου. Μπορείς επίσης να το μοιραστείς
-έτοιμο: `...?proxy=https://kimdis-proxy.xxx.workers.dev`
+Πλήρη βήματα και για τους δύο δρόμους: **[`worker/README.md`](worker/README.md)**
 
 ### Τοπική δοκιμή
 ```bash
@@ -132,8 +127,11 @@ extension/assets/     ← αντίγραφα του src/ (τα χρησιμοπ�
 
 index.html            online εφαρμογή      manifest.webmanifest   PWA
 sw.js                 service worker       build.sh               συγχρονισμός + zip
-extension/            επέκταση Chrome      worker/                Cloudflare Worker
-test/                 έλεγχοι
+extension/            επέκταση Chrome      test/                  έλεγχοι
+
+functions/proxy/      Cloudflare Pages Function — φεύγει ΜΑΖΙ με το site
+worker/proxy-core.js  η λογική του proxy (κοινή)
+worker/worker.js      αυτόνομος Worker, αν τον θες ξεχωριστά
 ```
 
 **Ο κοινός κώδικας γράφεται μία φορά** στο `src/` και αντιγράφεται στους δύο
@@ -152,15 +150,16 @@ test/                 έλεγχοι
 
 ```bash
 node test/core.test.js      # 70 έλεγχοι — ΑΔΑΜ, ΑΦΜ, CPV, ποσά, ανάλυση, CSV
-node test/worker.test.mjs   # 22 έλεγχοι — δρομολόγηση και ασφάλεια του Worker
+node test/worker.test.mjs   # 27 έλεγχοι — proxy: δρομολόγηση, ασφάλεια, Pages Functions
 
 python3 -m http.server 8765 &
-node test/e2e.mjs           # 49 έλεγχοι — πλήρης ροή σε πραγματικό Chromium
+node test/e2e.mjs           # 54 έλεγχοι — πλήρης ροή σε πραγματικό Chromium
 ```
 
 Το `e2e.mjs` σηκώνει Chromium με προσομοιωμένο API ΚΗΜΔΗΣ και ελέγχει ολόκληρη
 τη διαδρομή: σάρωση αλυσίδας από τον μεσαίο κρίκο, οικονομικά, τις τρεις
-καρτέλες, τα κατεβάσματα αρχείων, το σκούρο θέμα και τη συμπεριφορά στα 360px.
+καρτέλες, τα κατεβάσματα αρχείων, τον αυτόματο εντοπισμό του proxy, το σκούρο
+θέμα και τη συμπεριφορά στα 360px.
 
 ---
 

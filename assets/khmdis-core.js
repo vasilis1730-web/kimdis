@@ -114,7 +114,39 @@
         'καταχώρισε το URL του Worker σου, αλλιώς ο browser μπλοκάρει τις κλήσεις (CORS).'
       );
     }
-    return config.workerUrl.replace(/\/+$/, '') + '/?url=' + encodeURIComponent(url);
+    return config.workerUrl.replace(/\/+$/, '') + '?url=' + encodeURIComponent(url);
+  }
+
+  /**
+   * Ψάχνει proxy στο ΙΔΙΟ origin με τη σελίδα (Cloudflare Pages Function στο
+   * /proxy). Αν το βρει, η εφαρμογή ρυθμίζεται μόνη της — ο χρήστης δεν
+   * χρειάζεται να κάνει τίποτα. Επιστρέφει το URL ή null.
+   */
+  async function autodetectProxy(baseHref) {
+    if (isExtensionContext()) return null;
+    let base;
+    try { base = baseHref || (global.location && global.location.href); }
+    catch (e) { return null; }
+    if (!base) return null;
+
+    let healthUrl, proxyUrl;
+    try {
+      healthUrl = new URL('proxy/health', base).toString();
+      proxyUrl = new URL('proxy', base).toString();
+    } catch (e) { return null; }
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(healthUrl, { method: 'GET', signal: controller.signal, credentials: 'omit' });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const json = await res.json();
+      // Ελέγχουμε την υπογραφή, ώστε να μην μπερδευτούμε με άσχετη σελίδα 200.
+      return (json && json.ok === true && json.service === 'kimdis-proxy') ? proxyUrl : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   /* ======================================================================
@@ -1306,7 +1338,7 @@
     KHMDHS_ORIGIN, OPENDATA_BASE, PUBLIC_PAGE, SEARCH_PAGE, DIAVGEIA,
     STAGES, STAGE_LIST, STAGE_BY_CODE, UNKNOWN_STAGE,
     KhmdisError,
-    config, configure, resolveMode, isExtensionContext, proxied,
+    config, configure, resolveMode, isExtensionContext, proxied, autodetectProxy,
     clean, isAdam, isAda, isEsidis, detectInputType, stageOfAdam, yearOfAdam, scanAdams,
     isValidVat, describeCpv, CPV_DIVISIONS,
     toNumber, money, num, toDate, fmtDate, fmtVal, flatten, getBy, escapeHtml,

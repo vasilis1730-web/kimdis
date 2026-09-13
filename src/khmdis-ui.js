@@ -532,7 +532,8 @@
       nodes: [],
       stats: null,
       controller: null,
-      mode: 'chain'   // chain | bulk | advanced
+      mode: 'chain',  // chain | bulk | advanced
+      proxyAuto: false
     };
 
     /* ---- Ρυθμίσεις -> πυρήνας ---------------------------------------- */
@@ -964,8 +965,11 @@
         hint.innerHTML = 'Τρέχεις ως <strong>επέκταση Chrome</strong> — οι κλήσεις γίνονται απευθείας ' +
                          'και ο Worker δεν χρειάζεται.';
       } else if (settings.workerUrl) {
-        hint.innerHTML = 'Ενεργός. Έλεγχος: <a href="' + esc(settings.workerUrl) + '/health" target="_blank" rel="noopener">' +
-                         esc(settings.workerUrl) + '/health</a>';
+        hint.innerHTML = (state.proxyAuto
+            ? '✅ Βρέθηκε <strong>αυτόματα</strong> στο ίδιο origin (Cloudflare Pages Function) — δεν χρειάζεται να αλλάξεις τίποτα. '
+            : 'Ενεργός. ') +
+          'Έλεγχος: <a href="' + esc(settings.workerUrl) + '/health" target="_blank" rel="noopener">' +
+          esc(settings.workerUrl) + '/health</a>';
       } else {
         hint.innerHTML = 'Χωρίς Worker η online έκδοση <strong>δεν μπορεί</strong> να διαβάσει το ΚΗΜΔΗΣ ' +
                          '(ο browser το μπλοκάρει λόγω CORS). Οδηγίες: <code>worker/README.md</code>.';
@@ -981,28 +985,57 @@
     $('#kmIncludePdf').checked = settings.includePdf;
 
     applySettings();
-    updateWorkerHint();
     wire();
     switchTab('chain');
     refreshHistory();
 
-    // Χωρίς proxy, η online έκδοση δεν δουλεύει — το λέμε αμέσως αντί να αποτύχει σιωπηλά.
-    if (!K.isExtensionContext() && !settings.workerUrl) {
-      $('#kmSettings').hidden = false;
-      alertBox('info', 'Χρειάζεται μία ρύθμιση πριν ξεκινήσεις',
-        'Η online έκδοση χρειάζεται έναν Cloudflare Worker για να παρακάμψει το CORS. ' +
-        'Καταχώρισε το URL του παρακάτω. Οδηγίες βήμα-βήμα: <code>worker/README.md</code>.');
-    }
-
     // Προσυμπλήρωση από τη διεύθυνση: ?adam=26SYMV019210768
+    let preset = null;
     try {
       const q = new URLSearchParams(global.location ? global.location.search : '');
-      const preset = q.get('adam') || q.get('q');
-      if (preset) {
-        $('#kmAdam').value = K.clean(preset);
-        if (K.isExtensionContext() || settings.workerUrl) searchChain();
-      }
+      preset = K.clean(q.get('adam') || q.get('q') || '') || null;
     } catch (e) { /* χωρίς location */ }
+    if (preset) $('#kmAdam').value = preset;
+
+    /* --- Εντοπισμός proxy και εκκίνηση -------------------------------- */
+    (async function boot() {
+      let ready = K.isExtensionContext() || !!settings.workerUrl;
+
+      // Αν το site τρέχει σε Cloudflare Pages, το proxy είναι ήδη εκεί, στο
+      // ίδιο origin. Το βρίσκουμε μόνοι μας αντί να ζητάμε ρύθμιση.
+      if (!ready) {
+        setStatus('Έλεγχος για ενσωματωμένο proxy…');
+        const found = await K.autodetectProxy();
+        if (found) {
+          settings.workerUrl = found;
+          saveSettings(settings);
+          applySettings();
+          $('#kmWorkerUrl').value = found;
+          state.proxyAuto = true;
+          ready = true;
+        }
+      }
+
+      updateWorkerHint();
+
+      if (ready) {
+        setStatus(state.proxyAuto
+          ? 'Έτοιμο — το proxy βρέθηκε αυτόματα. Δώσε ένα αναγνωριστικό και πάτα Αναζήτηση.'
+          : 'Έτοιμο. Δώσε ένα αναγνωριστικό και πάτα Αναζήτηση.');
+        if (preset) searchChain();
+        return;
+      }
+
+      // Χωρίς proxy η online έκδοση δεν δουλεύει — το λέμε αντί να αποτύχει σιωπηλά.
+      $('#kmSettings').hidden = false;
+      alertBox('info', 'Χρειάζεται μία ρύθμιση πριν ξεκινήσεις',
+        'Ο browser μπλοκάρει τις κλήσεις προς το ΚΗΜΔΗΣ (CORS), οπότε χρειάζεται ένας ενδιάμεσος. ' +
+        'Ο ευκολότερος τρόπος είναι να ανεβάσεις το site σε <strong>Cloudflare Pages</strong>: ' +
+        'το proxy φεύγει μαζί του και δεν χρειάζεται καμία ρύθμιση εδώ. ' +
+        'Εναλλακτικά, καταχώρισε παρακάτω το URL ενός αυτόνομου Worker. ' +
+        'Οδηγίες: <code>worker/README.md</code>.');
+      setStatus('<span class="km-err">Δεν βρέθηκε proxy — δες τις Ρυθμίσεις παρακάτω.</span>');
+    })();
 
     return {
       root,

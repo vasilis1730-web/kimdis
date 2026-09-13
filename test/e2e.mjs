@@ -233,15 +233,60 @@ const diag = await page.textContent('#kmDiagOut');
 check('διαγνωστικά: ο Worker απαντά', diag.includes('Worker προσβάσιμος'));
 check('διαγνωστικά: το JSZip φορτώθηκε', diag.includes('Φορτωμένο'));
 
-/* =============== 6. Χωρίς Worker =============== */
-console.log('\n▸ Συμπεριφορά χωρίς ρυθμισμένο Worker');
+/* =============== 6. Χωρίς proxy πουθενά =============== */
+console.log('\n▸ Συμπεριφορά χωρίς κανένα proxy');
 const page2 = await ctx.newPage();
 await page2.addInitScript(() => localStorage.clear());
 await page2.goto(BASE, { waitUntil: 'networkidle' });
 await page2.waitForSelector('#__khmdis_app__');
+await page2.waitForSelector('.km-alert-info', { timeout: 10000 });
 check('εμφανίζει καθοδήγηση αντί να αποτύχει σιωπηλά',
-  (await page2.textContent('#kmAlerts')).includes('Cloudflare Worker'));
+  (await page2.textContent('#kmAlerts')).includes('Cloudflare Pages'));
 check('ανοίγει αυτόματα τις ρυθμίσεις', await page2.isVisible('#kmSettings'));
+
+/* =============== 6β. Αυτόματος εντοπισμός proxy στο ίδιο origin =============== */
+console.log('\n▸ Αυτόματος εντοπισμός Pages Function στο /proxy');
+const ctx3 = await browser.newContext({ locale: 'el-GR' });
+const page3 = await ctx3.newPage();
+await page3.addInitScript(() => localStorage.clear());
+
+let autoProxyHits = 0;
+// Προσομοιώνουμε τη Pages Function: /proxy/health και /proxy?url=…
+await page3.route('**/proxy/health', route => route.fulfill({
+  status: 200, contentType: 'application/json',
+  body: JSON.stringify({ ok: true, service: 'kimdis-proxy', version: '8.1.0' })
+}));
+await page3.route('**/proxy?*', async route => {
+  autoProxyHits++;
+  const up = new URL(new URL(route.request().url()).searchParams.get('url'));
+  const j = x => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(x) });
+  if (up.pathname.includes('home.xhtml')) return route.fulfill({ status: 200, contentType: 'text/html', body: '<html></html>' });
+  if (up.hostname.includes('diavgeia')) return j({});
+  const stage = up.pathname.split('/').filter(Boolean).pop();
+  let f = {}; try { f = JSON.parse(route.request().postData() || '{}'); } catch (e) {}
+  if (f.referenceNumber) { const r = REC[f.referenceNumber]; return j({ content: r && STAGE_OF(f.referenceNumber) === stage ? [r] : [] }); }
+  if (f.previousRequestReferenceNumber) return j({ content: (CHILDREN[f.previousRequestReferenceNumber] || []).filter(a => STAGE_OF(a) === stage).map(a => REC[a]) });
+  if (f.systemicNumber) return j({ content: Object.values(REC).filter(r => r.systemicNumber === f.systemicNumber && STAGE_OF(r.referenceNumber) === stage) });
+  return j({ content: [] });
+});
+
+await page3.goto(BASE, { waitUntil: 'networkidle' });
+await page3.waitForSelector('#__khmdis_app__');
+await page3.waitForFunction(() => /αυτόματα|Ρυθμίσεις/.test(document.querySelector('#kmStatus').textContent), { timeout: 10000 });
+check('ρυθμίστηκε μόνη της, χωρίς καμία ενέργεια χρήστη',
+  (await page3.textContent('#kmStatus')).includes('αυτόματα'), await page3.textContent('#kmStatus'));
+check('δεν ζητά ρύθμιση', !(await page3.isVisible('#kmSettings')));
+check('αποθήκευσε το URL του proxy',
+  (await page3.inputValue('#kmWorkerUrl')).endsWith('/proxy'), await page3.inputValue('#kmWorkerUrl'));
+
+await page3.fill('#kmAdam', '26SYMV019210768');
+await page3.click('#kmSearch');
+await page3.waitForSelector('.km-card', { timeout: 25000 });
+await page3.waitForFunction(() => !document.querySelector('#kmSearch').disabled, { timeout: 25000 });
+check('η αναζήτηση δουλεύει μέσω του αυτόματου proxy',
+  (await page3.locator('.km-card').count()) === 5, await page3.locator('.km-card').count());
+check('οι κλήσεις πέρασαν όντως από το /proxy', autoProxyHits > 0, autoProxyHits);
+await ctx3.close();
 
 /* =============== 7. Κινητό =============== */
 console.log('\n▸ Μικρή οθόνη (360px)');

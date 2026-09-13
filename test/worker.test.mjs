@@ -84,6 +84,39 @@ r = await worker.fetch(new Request('https://p.dev/health', { headers: { Origin: 
   { ALLOWED_ORIGINS: 'https://ok.example' }, ctx);
 check('μη επιτρεπτό origin δεν παίρνει άδεια', r.headers.get('Access-Control-Allow-Origin') !== 'https://bad.example');
 
+/* =============== Pages Functions =============== */
+console.log('\n▸ Cloudflare Pages Functions (ίδιο origin με το site)');
+const { onRequest: proxyFn } = await import('../functions/proxy/index.js');
+const { onRequest: healthFn } = await import('../functions/proxy/health.js');
+
+globalThis.fetch = async () => new Response('{"content":[]}', {
+  status: 200, headers: { 'Content-Type': 'application/json' }
+});
+
+r = await healthFn({ request: new Request('https://site.pages.dev/proxy/health'), env: {}, waitUntil() {} });
+body = await r.json();
+check('/proxy/health απαντά', r.status === 200 && body.ok === true);
+check('/proxy/health έχει την υπογραφή που ψάχνει η εφαρμογή',
+  body.service === 'kimdis-proxy', body.service);
+
+r = await proxyFn({
+  request: new Request('https://site.pages.dev/proxy?url=' +
+    encodeURIComponent('https://cerpp.eprocurement.gov.gr/khmdhs-opendata/contract?page=0'),
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"referenceNumber":"26SYMV019210768"}' }),
+  env: {}, waitUntil() {}
+});
+check('/proxy προωθεί κανονικά', r.status === 200, r.status);
+
+r = await proxyFn({
+  request: new Request('https://site.pages.dev/proxy?url=' + encodeURIComponent('https://evil.example.com/x')),
+  env: {}, waitUntil() {}
+});
+check('/proxy κρατά τον ίδιο έλεγχο ασφαλείας', r.status === 403, r.status);
+
+r = await proxyFn({ request: new Request('https://site.pages.dev/proxy'), env: {}, waitUntil() {} });
+body = await r.json();
+check('/proxy χωρίς url δίνει βοηθητικό μήνυμα', r.status === 400 && body.example.includes('/proxy?url='), body.example);
+
 console.log('\n' + '='.repeat(52));
 console.log(fail === 0 ? `✅ ΟΛΑ ΠΕΡΑΣΑΝ — ${pass} έλεγχοι` : `❌ ${fail} ΑΠΕΤΥΧΑΝ (${pass} πέρασαν)`);
 console.log('='.repeat(52));

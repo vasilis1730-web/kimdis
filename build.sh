@@ -51,7 +51,10 @@ fi
 echo "✅ Συγχρονίστηκαν ${#SHARED[@]} κοινά αρχεία σε ${#TARGETS[@]} προορισμούς."
 
 # Έλεγχος σύνταξης — καλύτερα να σκάσει εδώ παρά στον browser
-for js in src/khmdis-core.js src/khmdis-ui.js sw.js worker/worker.js extension/background.js extension/popup.js; do
+for js in src/khmdis-core.js src/khmdis-ui.js sw.js \
+         worker/proxy-core.js worker/worker.js \
+         functions/proxy/index.js functions/proxy/health.js \
+         extension/background.js extension/popup.js extension/app.js; do
   node --check "$js" >/dev/null 2>&1 || { echo "✗ συντακτικό σφάλμα: $js"; node --check "$js"; exit 1; }
 done
 echo "✅ Έλεγχος σύνταξης JavaScript: OK"
